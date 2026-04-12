@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HomeBuddy — My First Home</title>
+  <meta name="description" content="HomeBuddy helps young adults moving into their first home organize rooms, track items, plan budgets, and get AI-powered suggestions." />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <!-- Local config: create config.js to set your Gemini API key -->
+  <script src="config.js" onerror="console.warn('config.js not found — HomeBot AI disabled.')"></script>
+  <style>
+    /* ═══════════════════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════════════════ */
+    :root {
+      --bg:          #0f1113;
+      --surface:     #181a1d;
+      --card:        #202327;
+      --card-hover:  #252830;
+      --border:      rgba(255,255,255,0.06);
+      --border-md:   rgba(255,255,255,0.10);
+      --primary:     #c2a078;
+      --primary-dim: rgba(194,160,120,0.12);
+      --primary-glow:rgba(194,160,120,0.20);
+      --green:       #81c99a;
+      --green-dim:   rgba(129,201,154,0.12);
+      --amber:       #d4a056;
+      --amber-dim:   rgba(212,160,86,0.12);
+      --red:         #e07068;
+      --red-dim:     rgba(224,112,104,0.12);
+      --blue:        #7aa7c7;
+      --blue-dim:    rgba(122,167,199,0.12);
+      --text:        #e3e4e6;
+      --text-soft:   #c8c9cb;
+      --muted:       #8e9196;
+      --font:        'Inter', sans-serif;
+      --radius:      16px;
+      --radius-sm:   10px;
+      --t:           0.22s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       RESET
+    ═══════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 15px; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { cursor: pointer; font-family: var(--font); }
+    input, textarea, select { font-family: var(--font); color: var(--text); }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
+
+    /* ═══════════════════════════════════════════════════════
+       LAYOUT
+    ═══════════════════════════════════════════════════════ */
+    .app { display: flex; height: 100vh; overflow: hidden; }
+
+    /* ═══════════════════════════════════════════════════════
+       SIDEBAR
+    ═══════════════════════════════════════════════════════ */
+    .sidebar {
+      width: 272px;
+      min-width: 272px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Sidebar glow accent */
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      opacity: 0.4;
+    }
+
+    .sidebar-head {
+      padding: 1.4rem 1.25rem 1rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .sidebar-head-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .app-logo {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--primary) 0%, #e0b88a 50%, #c4896a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .app-logo-icon { font-size: 1.3rem; }
+    .app-tagline { font-size: 0.7rem; color: var(--muted); margin-top: 3px; letter-spacing: 0.02em; }
+
+    /* Currency Switcher */
+    .currency-select {
+      appearance: none;
+      background: var(--card);
+      border: 1px solid var(--border-md);
+      border-radius: 8px;
+      color: var(--primary);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color var(--t), box-shadow var(--t);
+      letter-spacing: 0.03em;
+    }
+    .currency-select:hover { border-color: var(--primary); }
+    .currency-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-dim); }
+    .currency-select option { background: var(--card); color: var(--text); }
+
+    /* Budget Card */
+    .sidebar-budget {
+      margin: 1rem 1.1rem;
+      background: linear-gradient(135deg, rgba(194,160,120,0.09), rgba(194,160,120,0.03));
+      border: 1px solid rgba(194,160,120,0.18);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .sidebar-budget::after {
+      content: '💰';
+      position: absolute;
+      right: -6px; bottom: -8px;
+      font-size: 3rem;
+      opacity: 0.05;
+      pointer-events: none;
+    }
+    .budget-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.55rem;
+    }
+    .budget-label {
+      font-size: 0.68rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+    }
+    .budget-edit-btn {
+      background: var(--primary-dim);
+      border: 1px solid rgba(194,160,120,0.25);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 0.68rem;
+      color: var(--primary);
+      font-weight: 700;
+      transition: all var(--t);
+    }
+    .budget-edit-btn:hover {
+      background: var(--primary);
+      color: #1a1410;
+      border-color: var(--primary);
+      transform: scale(1.04);
+    }
+    .budget-total {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -0.04em;
+      line-height: 1;
+      transition: color var(--t);
+    }
+    .budget-total.over { color: var(--red); }
+    .budget-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.35rem;
+    }
+    .budget-bar-wrap {
+      margin-top: 0.6rem;
+      background: rgba(255,255,255,0.06);
+      border-radius: 99px;
+      height: 4px;
+      overflow: hidden;
+    }
+    .budget-bar {
+      height: 4px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--primary), #d4956a);
+      transition: width 0.4s ease, background 0.3s;
+      max-width: 100%;
+    }
+    .budget-bar.over { background: linear-gradient(90deg, var(--red), #e07560); }
+
+    /* Rooms Section */
+    .sidebar-section-label {
+      padding: 0.6rem 1.25rem 0.2rem;
+      font-size: 0.66rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .rooms-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.2rem 0.7rem;
+    }
+    .room-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.58rem 0.7rem;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-bottom: 2px;
+      transition: background var(--t), color var(--t);
+      position: relative;
+    }
+    .room-item:hover { background: rgba(255,255,255,0.04); }
+    .room-item.active {
+      background: var(--primary-dim);
+    }
+    .room-item.active .room-name { color: var(--primary); font-weight: 600; }
+    .room-icon { font-size: 1.05rem; line-height: 1; flex-shrink: 0; }
+    .room-name {
+      font-size: 0.86rem;
+      font-weight: 500;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-soft);
+      transition: color var(--t);
+    }
+    /* Count + Delete side-by-side, never overlap */
+    .room-meta {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .room-count {
+      font-size: 0.68rem;
+      background: rgba(255,255,255,0.07);
+      padding: 1px 7px;
+      border-radius: 99px;
+      color: var(--muted);
+      min-width: 22px;
+      text-align: center;
+      transition: all var(--t);
+    }
+    .room-item.active .room-count { background: var(--primary-dim); color: var(--primary); }
+    .room-del {
+      background: none;
+      border: none;
+      color: var(--red);
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      line-height: 1;
+      opacity: 0;
+      transition: opacity var(--t), background var(--t);
+    }
+    .room-item:hover .room-del { opacity: 1; }
+    .room-del:hover { background: var(--red-dim); }
+
+    .add-room-btn {
+      margin: 0.4rem 0.85rem 1rem;
+      background: rgba(194,160,120,0.06);
+      border: 1px dashed rgba(194,160,120,0.3);
+      color: var(--primary);
+      border-radius: 12px;
+      padding: 0.6rem;
+      font-size: 0.84rem;
+      font-weight: 600;
+      width: calc(100% - 1.7rem);
+      transition: background var(--t), border-color var(--t), transform var(--t);
+      flex-shrink: 0;
+    }
+    .add-room-btn:hover { background: rgba(194,160,120,0.12); border-color: var(--primary); transform: translateY(-1px); }
+
+    /* ═══════════════════════════════════════════════════════
+       MAIN CONTENT
+    ═══════════════════════════════════════════════════════ */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* Top Bar */
+    .topbar {
+      padding: 1.2rem 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-shrink: 0;
+      background: rgba(24,26,29,0.8);
+      backdrop-filter: blur(10px);
+    }
+    .topbar-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      letter-spacing: -0.03em;
+    }
+    .topbar-cost {
+      font-size: 0.82rem;
+      color: var(--muted);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 14px;
+    }
+    .topbar-cost strong { color: var(--primary); }
+
+    /* Filter Bar */
+    .filters {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      padding: 0.7rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .filter-btn {
+      padding: 0.32rem 0.85rem;
+      border-radius: 99px;
+      border: 1px solid var(--border-md);
+      background: var(--card);
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 500;
+      transition: all var(--t);
+      white-space: nowrap;
+    }
+    .filter-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-dim); }
+    .filter-btn.active { background: var(--primary); border-color: var(--primary); color: #1a1410; font-weight: 700; }
+    .filter-spacer { flex: 1; }
+
+    /* Stats Strip */
+    .stats-strip {
+      display: flex;
+      gap: 1.25rem;
+      padding: 0.55rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .stat-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.77rem;
+      color: var(--muted);
+    }
+    .stat-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .stat-chip strong { color: var(--text); font-weight: 600; }
+
+    /* Items Grid */
+    .items-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+    }
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 1.1rem;
+    }
+
+    /* Empty State */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 320px;
+      color: var(--muted);
+      gap: 0.75rem;
+      text-align: center;
+    }
+    .empty-icon { font-size: 3rem; opacity: 0.18; }
+    .empty-state p { font-size: 0.88rem; max-width: 240px; line-height: 1.65; }
+
+    /* ─── ITEM CARD ─── */
+    .item-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.15rem 1.15rem 0.9rem;
+      transition: transform var(--t), border-color var(--t), box-shadow var(--t), background var(--t);
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    .item-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(194,160,120,0.22);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.28);
+      background: var(--card-hover);
+    }
+    .item-card.purchased { opacity: 0.48; }
+
+    .card-priority {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.67rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      padding: 0.2rem 0.6rem;
+      border-radius: 99px;
+      margin-bottom: 0.7rem;
+    }
+    .priority-necessary { background: var(--green-dim); color: var(--green); border: 1px solid rgba(129,201,154,0.28); }
+    .priority-later     { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(212,160,86,0.28); }
+    .priority-wishlist  { background: var(--blue-dim);  color: var(--blue);  border: 1px solid rgba(122,167,199,0.28); }
+    .priority-custom    { background: rgba(0,0,0,0.06); color: var(--muted); border: 1px solid var(--border); }
+
+    .card-name { font-size: 0.98rem; font-weight: 700; margin-bottom: 0.25rem; line-height: 1.35; color: var(--text); }
+    .card-category { font-size: 0.73rem; color: var(--muted); margin-bottom: 0.55rem; }
+    .card-notes { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.75rem; line-height: 1.6; }
+    .card-price { font-size: 1.2rem; font-weight: 800; color: var(--primary); letter-spacing: -0.02em; }
+
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-top: 0.8rem;
+      padding-top: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+    .card-btn {
+      padding: 0.28rem 0.72rem;
+      border-radius: 7px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      border: 1px solid var(--border-md);
+      background: transparent;
+      color: var(--muted);
+      transition: all var(--t);
+    }
+    .card-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); border-color: var(--border-md); }
+    .card-btn.danger:hover { background: var(--red-dim); border-color: rgba(224,112,104,0.3); color: var(--red); }
+    .purchased-toggle {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+    }
+    .purchased-toggle input { accent-color: var(--green); width: 13px; height: 13px; cursor: pointer; }
+
+    /* ─── FAB ─── */
+    .fab {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: linear-gradient(135deg, var(--primary) 0%, #b8875f 100%);
+      color: #1a120a;
+      border: none;
+      border-radius: 99px;
+      padding: 0.82rem 1.45rem;
+      font-size: 0.9rem;
+      font-weight: 800;
+      box-shadow: 0 8px 32px rgba(194,160,120,0.3);
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: transform var(--t), box-shadow var(--t), opacity var(--t);
+      z-index: 800;
+    }
+    .fab:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 14px 40px rgba(194,160,120,0.45); }
+
+    /* ─── NO ROOM PLACEHOLDER ─── */
+    .no-room {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 2rem;
+    }
+    .no-room-icon { font-size: 4rem; opacity: 0.15; }
+    .no-room h2 { font-size: 1.3rem; color: var(--text); font-weight: 700; }
+    .no-room p { font-size: 0.88rem; max-width: 300px; line-height: 1.7; }
+
+    /* ═══════════════════════════════════════════════════════
+       MODALS
+    ═══════════════════════════════════════════════════════ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--t);
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border-md);
+      border-radius: 22px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+      transform: translateY(18px) scale(0.97);
+      transition: transform var(--t);
+      max-height: 88vh;
+      overflow-y: auto;
+    }
+    .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+    .modal-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 1.4rem; color: var(--text); letter-spacing: -0.02em; }
+
+    .form-row { margin-bottom: 1rem; }
+    .form-label {
+      display: block;
+      font-size: 0.73rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 0.38rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border-md);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      padding: 0.62rem 0.9rem;
+      font-size: 0.9rem;
+      transition: border-color var(--t), box-shadow var(--t);
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-dim);
+    }
+    .form-select option { background: var(--card); color: var(--text); }
+    .form-textarea { resize: vertical; min-height: 70px; }
+    .form-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+    .modal-actions { display: flex; gap: 0.7rem; margin-top: 1.4rem; }
+    .btn-primary {
+      flex: 1;
+      padding: 0.7rem;
+      background: linear-gradient(135deg, var(--primary), #b8875f);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #1a120a;
+      font-size: 0.9rem;
+      font-weight: 800;
+      transition: opacity var(--t), transform var(--t);
+    }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-ghost {
+      padding: 0.7rem 1.2rem;
+      background: transparent;
+      border: 1px solid var(--border-md);
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background var(--t), color var(--t);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+
+    /* Icon Picker */
+    .icon-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .icon-btn {
+      font-size: 1.45rem;
+      background: var(--surface);
+      border: 2px solid var(--border-md);
+      border-radius: 9px;
+      padding: 5px 8px;
+      cursor: pointer;
+      transition: border-color var(--t), background var(--t), transform var(--t);
+      line-height: 1;
+    }
+    .icon-btn:hover { border-color: var(--primary); background: var(--primary-dim); transform: scale(1.08); }
+    .icon-btn.selected { border-color: var(--primary); background: var(--primary-dim); }
+
+    /* Category Manager */
+    .cat-manage-row { display: flex; gap: 0.5rem; }
+    .cat-manage-row input { flex: 1; }
+    .cat-add-btn {
+      padding: 0.62rem 1rem;
+      background: var(--primary);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #1a120a;
+      font-weight: 800;
+      font-size: 0.85rem;
+      transition: opacity var(--t);
+    }
+    .cat-add-btn:hover { opacity: 0.85; }
+    .cat-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+    .cat-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.22rem 0.6rem;
+      border-radius: 99px;
+      background: var(--surface);
+      border: 1px solid var(--border-md);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .cat-tag-del { background: none; border: none; color: var(--red); font-size: 0.75rem; padding: 0; cursor: pointer; opacity: 0.7; }
+    .cat-tag-del:hover { opacity: 1; }
+
+    /* ═══════════════════════════════════════════════════════
+       TOAST
+    ═══════════════════════════════════════════════════════ */
+    .toast {
+      position: fixed;
+      bottom: 5.8rem;
+      right: 2rem;
+      z-index: 1200;
+      background: var(--surface);
+      border: 1px solid var(--border-md);
+      border-radius: 11px;
+      padding: 0.72rem 1.15rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      transform: translateY(12px);
+      opacity: 0;
+      transition: all var(--t);
+      pointer-events: none;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ═══════════════════════════════════════════════════════
+       HOMEBOT CHATBOT
+    ═══════════════════════════════════════════════════════ */
+    .chat-fab {
+      position: fixed;
+      bottom: 2rem;
+      right: 11rem;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #9a8070, var(--primary));
+      border: none;
+      color: white;
+      font-size: 1.3rem;
+      box-shadow: 0 6px 24px rgba(194,160,120,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform var(--t), box-shadow var(--t);
+      z-index: 800;
+    }
+    .chat-fab:hover { transform: scale(1.1); box-shadow: 0 10px 32px rgba(194,160,120,0.45); }
+
+    .chat-panel {
+      position: fixed;
+      bottom: 5.5rem;
+      right: 2rem;
+      width: 400px;
+      max-height: 580px;
+      background: var(--card);
+      border: 1px solid var(--border-md);
+      border-radius: 22px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+      display: flex;
+      flex-direction: column;
+      z-index: 900;
+      transform: translateY(20px) scale(0.95);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform var(--t), opacity var(--t);
+    }
+    .chat-panel.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: all; }
+
+    .chat-header {
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-shrink: 0;
+    }
+    .chat-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #9a8070, var(--primary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .chat-info { flex: 1; }
+    .chat-name { font-size: 0.9rem; font-weight: 700; color: var(--text); }
+    .chat-status { font-size: 0.67rem; color: var(--green); }
+    .chat-close-btn {
+      padding: 0.25rem 0.7rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all var(--t);
+    }
+    .chat-close-btn:hover { color: var(--text); border-color: var(--border-md); }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      background: var(--bg);
+      min-height: 100px;
+    }
+    .chat-msg { display: flex; flex-direction: column; gap: 0.18rem; max-width: 90%; }
+    .chat-msg.bot { align-self: flex-start; }
+    .chat-msg.user { align-self: flex-end; }
+    .chat-bubble-text {
+      padding: 0.65rem 0.9rem;
+      border-radius: 14px;
+      font-size: 0.82rem;
+      line-height: 1.58;
+    }
+    .chat-msg.bot .chat-bubble-text {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      color: var(--text);
+    }
+    .chat-msg.user .chat-bubble-text {
+      background: linear-gradient(135deg, var(--primary), #c47848);
+      color: #1a120a;
+      border-bottom-right-radius: 4px;
+      font-weight: 500;
+    }
+    .chat-time { font-size: 0.6rem; color: var(--muted); padding: 0 4px; }
+    .chat-msg.user .chat-time { align-self: flex-end; }
+
+    .chat-suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      padding: 0.5rem 1rem 0.65rem;
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+    .chat-chip {
+      padding: 0.26rem 0.7rem;
+      border-radius: 99px;
+      font-size: 0.71rem;
+      background: var(--surface);
+      border: 1px solid rgba(194,160,120,0.22);
+      color: var(--primary);
+      cursor: pointer;
+      transition: background var(--t);
+    }
+    .chat-chip:hover { background: var(--primary-dim); }
+
+    .chat-input-row {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.72rem 1rem;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      background: var(--card);
+      border-radius: 0 0 22px 22px;
+    }
+    .chat-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border-md);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      padding: 0.52rem 0.82rem;
+      font-size: 0.85rem;
+      transition: border-color var(--t);
+    }
+    .chat-input:focus { outline: none; border-color: var(--primary); }
+    .chat-send {
+      padding: 0.52rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary), #b8875f);
+      border: none;
+      color: #1a120a;
+      transition: opacity var(--t);
+    }
+    .chat-send:hover { opacity: 0.85; }
+    .chat-send:disabled { opacity: 0.38; cursor: default; }
+
+    .chat-typing {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0.5rem 0.75rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      border-bottom-left-radius: 4px;
+      width: fit-content;
+    }
+    .chat-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      animation: chatDot 1.2s infinite;
+    }
+    .chat-dot:nth-child(2) { animation-delay: 0.2s; }
+    .chat-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes chatDot {
+      0%,80%,100% { transform: scale(0.65); opacity: 0.38; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+    .chat-added-items { margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.28rem; }
+    .chat-added-item {
+      font-size: 0.74rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 7px;
+      background: var(--green-dim);
+      border: 1px solid rgba(129,201,154,0.22);
+      color: var(--green);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════════════════ */
+    @media (max-width: 680px) {
+      .sidebar { width: 220px; min-width: 220px; }
+      .topbar, .filters, .stats-strip, .items-area { padding-left: 1rem; padding-right: 1rem; }
+      .items-grid { grid-template-columns: 1fr; }
+      .chat-panel { width: calc(100vw - 2rem); right: 1rem; }
+    }
+    @media (max-width: 480px) {
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-head-row">
+        <div class="app-logo">
+          <span class="app-logo-icon">🏠</span> HomeBuddy
+        </div>
+        <select class="currency-select" id="currencySelect" onchange="setCurrency(this.value)" title="Switch currency">
+          <option value="₹">₹ INR</option>
+          <option value="$">$ USD</option>
+          <option value="€">€ EUR</option>
+          <option value="£">£ GBP</option>
+        </select>
+      </div>
+      <div class="app-tagline">Your first home, organized.</div>
+    </div>
+
+    <!-- Budget Card -->
+    <div class="sidebar-budget" title="Total budget planning limit">
+      <div class="budget-header">
+        <span class="budget-label">My Budget Limit</span>
+        <button class="budget-edit-btn" onclick="openBudgetModal()" id="budgetEditBtn">Edit ✏️</button>
+      </div>
+      <div class="budget-total" id="budgetTotal">₹0</div>
+      <div class="budget-sub" id="budgetSub">Est. Total: ₹0</div>
+      <div class="budget-bar-wrap">
+        <div class="budget-bar" id="budgetBar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section-label">My Rooms</div>
+    <div class="rooms-list" id="roomsList"></div>
+    <button class="add-room-btn" onclick="openRoomModal()">＋ Add Room</button>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main" id="mainArea">
+    <!-- No room selected -->
+    <div class="no-room" id="noRoomView">
+      <div class="no-room-icon">🛋️</div>
+      <h2>No room selected</h2>
+      <p>Pick a room from the sidebar — or add one — to start building your home essentials list.</p>
+    </div>
+
+    <!-- Room view -->
+    <div id="roomView" style="display:none; flex-direction:column; overflow:hidden; flex:1;">
+      <div class="topbar">
+        <div class="topbar-title">
+          <span id="roomViewIcon"></span>
+          <span id="roomViewName"></span>
+        </div>
+        <div class="topbar-cost" id="roomViewCost"></div>
+      </div>
+
+      <div class="filters" id="filtersBar"></div>
+      <div class="stats-strip" id="statsStrip"></div>
+
+      <div class="items-area">
+        <div class="items-grid" id="itemsGrid"></div>
+        <div class="empty-state" id="emptyState" style="display:none;">
+          <div class="empty-icon">📦</div>
+          <p>No items here yet.<br/>Hit <strong>＋ Add Item</strong> below to get started!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fabBtn" onclick="openItemModal()" style="display:none;">
+  <span>＋</span> Add Item
+</button>
+
+<!-- ─── ROOM MODAL ─── -->
+<div class="modal-overlay" id="roomModalOverlay">
+  <div class="modal">
+    <div class="modal-title" id="roomModalTitle">Add Room</div>
+    <div class="form-row">
+      <label class="form-label">Room Icon</label>
+      <div class="icon-grid" id="iconPicker"></div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Room Name</label>
+      <input type="text" class="form-input" id="roomNameInput" placeholder="e.g. Living Room" maxlength="40" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeRoomModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveRoom()">Save Room</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── ITEM MODAL ─── -->
+<div class="modal-overlay" id="itemModalOverlay">
+  <div class="modal">
+    <div class="modal-title" id="itemModalTitle">Add Item</div>
+    <div class="form-row">
+      <label class="form-label">Item Name</label>
+      <input type="text" class="form-input" id="itemName" placeholder="e.g. Sofa, Air Conditioner…" maxlength="60" />
+    </div>
+    <div class="form-row form-2col">
+      <div>
+        <label class="form-label" id="itemPriceLabel">Price</label>
+        <input type="number" class="form-input" id="itemPrice" placeholder="0" min="0" step="0.01" />
+      </div>
+      <div>
+        <label class="form-label">Priority</label>
+        <select class="form-select" id="itemPriority">
+          <option value="necessary">✅ Necessary</option>
+          <option value="later">⏳ Buy Later</option>
+          <option value="wishlist">✨ Wishlist</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Category</label>
+      <select class="form-select" id="itemCategory"></select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Notes (optional)</label>
+      <textarea class="form-textarea" id="itemNotes" placeholder="Brand preference, size, color…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeItemModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveItem()">Save Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CATEGORIES MODAL ─── -->
+<div class="modal-overlay" id="catModalOverlay">
+  <div class="modal">
+    <div class="modal-title">Manage Categories</div>
+    <div class="form-row">
+      <label class="form-label">Add New Category</label>
+      <div class="cat-manage-row">
+        <input type="text" class="form-input" id="newCatInput" placeholder="e.g. Electronics, Decor…" maxlength="30" />
+        <button class="cat-add-btn" onclick="addCategory()">Add</button>
+      </div>
+    </div>
+    <div class="cat-tags" id="catTagsContainer"></div>
+    <div class="modal-actions" style="margin-top:1.2rem;">
+      <button class="btn-primary" onclick="closeCatModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── BUDGET MODAL ─── -->
+<div class="modal-overlay" id="budgetModalOverlay">
+  <div class="modal">
+    <div class="modal-title">Edit Budget Limit</div>
+    <div class="form-row">
+      <label class="form-label" id="budgetModalLabel">Total Budget Limit</label>
+      <input type="number" class="form-input" id="budgetLimitInput" placeholder="0" min="0" step="0.01" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeBudgetModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveBudget()">Save Budget</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ─── HOMEBOT CHAT ─── -->
+<button class="chat-fab" id="chatFab" onclick="toggleChat()" title="Ask HomeBot">🤖</button>
+
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-header">
+    <div class="chat-avatar">🤖</div>
+    <div class="chat-info">
+      <div class="chat-name">HomeBot</div>
+      <div class="chat-status" id="chatStatus">● AI-powered assistant</div>
+    </div>
+    <button class="chat-close-btn" onclick="toggleChat()">✕ Close</button>
+  </div>
+
+  <div class="chat-messages" id="chatMessages"></div>
+
+  <div class="chat-suggestions" id="chatSuggestions">
+    <button class="chat-chip" onclick="useSuggestion(this)">What do I need for a bedroom?</button>
+    <button class="chat-chip" onclick="useSuggestion(this)">Add sofa, TV and coffee table</button>
+    <button class="chat-chip" onclick="useSuggestion(this)">Kitchen must-haves on a budget</button>
+    <button class="chat-chip" onclick="useSuggestion(this)">Show my shopping list</button>
+  </div>
+
+  <div class="chat-input-row">
+    <input class="chat-input" id="chatInput" placeholder="Ask or give me a list…" />
+    <button class="chat-send" id="chatSend" onclick="handleChatSend()">Send</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+const ICONS = ['🛋️','🛏️','🍳','🚿','📦','🏠','🌿','🪑','💻','🎮','📚','🧹','🔧','🪴','🖼️','🐱','🐶','🏋️','🎵','🍽️'];
+const DEFAULT_CATS = ['Furniture','Appliances','Bedding','Kitchen','Electronics','Decor','Bathroom','Outdoor'];
+
+// Exchange rates relative to INR base
+const EXCHANGE_RATES = { '₹': 1, '$': 0.012, '€': 0.011, '£': 0.0094 };
+const CURRENCY_LOCALES = { '₹': 'en-IN', '$': 'en-US', '€': 'de-DE', '£': 'en-GB' };
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let state = {
+  rooms: [],
+  categories: [...DEFAULT_CATS],
+  activeRoom: null,
+  activeFilter: 'all',
+  editingRoom: null,
+  editingItem: null,
+  maxBudget: 100000,
+  currency: '₹',
+};
+
+// ─── PERSISTENCE ──────────────────────────────────────────────────────────────
+function save() {
+  localStorage.setItem('homebuddy_v1', JSON.stringify({
+    rooms: state.rooms,
+    categories: state.categories,
+    maxBudget: state.maxBudget,
+    currency: state.currency,
+  }));
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem('homebuddy_v1');
+    if (raw) Object.assign(state, JSON.parse(raw));
+  } catch (e) { console.warn('Failed to load state:', e); }
+
+  // Seed rooms on first run
+  if (!state.rooms || state.rooms.length === 0) {
+    state.rooms = [
+      { id: uid(), name: 'Master Bedroom', icon: '🛏️', items: [] },
+      { id: uid(), name: 'Bedroom 2',      icon: '🛏️', items: [] },
+      { id: uid(), name: 'Bathroom 1',     icon: '🚿', items: [] },
+      { id: uid(), name: 'Bathroom 2',     icon: '🚿', items: [] },
+      { id: uid(), name: 'Kitchen',        icon: '🍳', items: [] },
+      { id: uid(), name: 'Balcony 1',      icon: '🪴', items: [] },
+      { id: uid(), name: 'Balcony 2',      icon: '🪴', items: [] },
+      { id: uid(), name: 'Balcony 3',      icon: '🪴', items: [] },
+    ];
+    save();
+  }
+
+  state.activeFilter = 'all';
+  render();
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+// ─── CURRENCY ─────────────────────────────────────────────────────────────────
+function setCurrency(sym) {
+  if (sym === state.currency) return;
+  const from = EXCHANGE_RATES[state.currency] || 1;
+  const to   = EXCHANGE_RATES[sym] || 1;
+  const factor = to / from;
+
+  // Convert budget
+  state.maxBudget = Math.round(state.maxBudget * factor * 100) / 100;
+
+  // Convert all item prices
+  state.rooms.forEach(room => {
+    room.items.forEach(item => {
+      item.price = Math.round(item.price * factor * 100) / 100;
+    });
+  });
+
+  state.currency = sym;
+  save();
+  render();
+  toast(`Currency switched to ${sym}`);
+}
+
+function formatMoney(amount) {
+  const locale = CURRENCY_LOCALES[state.currency] || 'en-US';
+  return state.currency + ' ' + Number(amount || 0).toLocaleString(locale, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
+
+// ─── BUDGET ───────────────────────────────────────────────────────────────────
+function openBudgetModal() {
+  document.getElementById('budgetModalLabel').textContent = `Total Budget Limit (${state.currency})`;
+  document.getElementById('budgetLimitInput').value = state.maxBudget;
+  document.getElementById('budgetModalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('budgetLimitInput').focus(), 80);
+}
+function closeBudgetModal() {
+  document.getElementById('budgetModalOverlay').classList.remove('open');
+}
+function saveBudget() {
+  const val = parseFloat(document.getElementById('budgetLimitInput').value);
+  if (isNaN(val) || val < 0) { toast('Please enter a valid amount.'); return; }
+  state.maxBudget = val;
+  save(); render(); closeBudgetModal();
+  toast('Budget limit updated!');
+}
+
+// ─── ROOMS ────────────────────────────────────────────────────────────────────
+function openRoomModal(roomId) {
+  state.editingRoom = roomId || null;
+  const room = roomId ? state.rooms.find(r => r.id === roomId) : null;
+  document.getElementById('roomModalTitle').textContent = room ? 'Edit Room' : 'Add Room';
+  document.getElementById('roomNameInput').value = room ? room.name : '';
+
+  const picker = document.getElementById('iconPicker');
+  picker.innerHTML = '';
+  ICONS.forEach(ic => {
+    const btn = document.createElement('button');
+    btn.className = 'icon-btn' + (room && room.icon === ic ? ' selected' : '');
+    btn.textContent = ic;
+    btn.type = 'button';
+    if (room && room.icon === ic) btn.dataset.selected = 'true';
+    btn.onclick = () => {
+      picker.querySelectorAll('.icon-btn').forEach(b => { b.classList.remove('selected'); delete b.dataset.selected; });
+      btn.classList.add('selected');
+      btn.dataset.selected = 'true';
+    };
+    picker.appendChild(btn);
+  });
+
+  document.getElementById('roomModalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('roomNameInput').focus(), 80);
+}
+function closeRoomModal() {
+  document.getElementById('roomModalOverlay').classList.remove('open');
+}
+function saveRoom() {
+  const name = document.getElementById('roomNameInput').value.trim();
+  if (!name) { toast('Please enter a room name.'); return; }
+  const iconEl = document.getElementById('iconPicker').querySelector('[data-selected]');
+  const icon = iconEl ? iconEl.textContent : '🏠';
+
+  if (state.editingRoom) {
+    const room = state.rooms.find(r => r.id === state.editingRoom);
+    if (room) { room.name = name; room.icon = icon; }
+  } else {
+    const room = { id: uid(), name, icon, items: [] };
+    state.rooms.push(room);
+    state.activeRoom = room.id;
+  }
+  save(); render(); closeRoomModal();
+  toast(state.editingRoom ? 'Room updated!' : 'Room added!');
+}
+function deleteRoom(id) {
+  if (!confirm('Delete this room and all its items?')) return;
+  state.rooms = state.rooms.filter(r => r.id !== id);
+  if (state.activeRoom === id) state.activeRoom = state.rooms.length ? state.rooms[0].id : null;
+  save(); render();
+  toast('Room deleted.');
+}
+
+// ─── ITEMS ────────────────────────────────────────────────────────────────────
+function openItemModal(itemId) {
+  state.editingItem = itemId || null;
+  const room = state.rooms.find(r => r.id === state.activeRoom);
+  if (!room) return;
+  const item = itemId ? room.items.find(i => i.id === itemId) : null;
+
+  document.getElementById('itemModalTitle').textContent = item ? 'Edit Item' : 'Add Item';
+  document.getElementById('itemPriceLabel').textContent = `Price (${state.currency})`;
+  document.getElementById('itemName').value     = item ? item.name : '';
+  document.getElementById('itemPrice').value    = item ? item.price : '';
+  document.getElementById('itemPriority').value = item ? item.priority : 'necessary';
+  document.getElementById('itemNotes').value    = item ? (item.notes || '') : '';
+
+  const catSel = document.getElementById('itemCategory');
+  catSel.innerHTML = '';
+  state.categories.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    catSel.appendChild(opt);
+  });
+  if (item) catSel.value = item.category;
+
+  document.getElementById('itemModalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('itemName').focus(), 80);
+}
+function closeItemModal() {
+  document.getElementById('itemModalOverlay').classList.remove('open');
+}
+function saveItem() {
+  const name = document.getElementById('itemName').value.trim();
+  if (!name) { toast('Please enter an item name.'); return; }
+  const room = state.rooms.find(r => r.id === state.activeRoom);
+  if (!room) return;
+
+  const data = {
+    name,
+    price:    parseFloat(document.getElementById('itemPrice').value) || 0,
+    priority: document.getElementById('itemPriority').value,
+    category: document.getElementById('itemCategory').value,
+    notes:    document.getElementById('itemNotes').value.trim(),
+  };
+
+  if (state.editingItem) {
+    const item = room.items.find(i => i.id === state.editingItem);
+    if (item) Object.assign(item, data);
+  } else {
+    room.items.push({ id: uid(), purchased: false, ...data });
+  }
+  save(); render(); closeItemModal();
+  toast(state.editingItem ? 'Item updated!' : 'Item added!');
+}
+function deleteItem(itemId) {
+  const room = state.rooms.find(r => r.id === state.activeRoom);
+  if (!room) return;
+  room.items = room.items.filter(i => i.id !== itemId);
+  save(); render();
+  toast('Item removed.');
+}
+function togglePurchased(itemId) {
+  const room = state.rooms.find(r => r.id === state.activeRoom);
+  if (!room) return;
+  const item = room.items.find(i => i.id === itemId);
+  if (item) { item.purchased = !item.purchased; save(); render(); }
+}
+
+// ─── CATEGORIES ───────────────────────────────────────────────────────────────
+function openCatModal() {
+  renderCatTags();
+  document.getElementById('catModalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('newCatInput').focus(), 80);
+}
+function closeCatModal() {
+  document.getElementById('catModalOverlay').classList.remove('open');
+  save(); render();
+}
+function addCategory() {
+  const val = document.getElementById('newCatInput').value.trim();
+  if (!val) return;
+  if (!state.categories.includes(val)) { state.categories.push(val); save(); }
+  document.getElementById('newCatInput').value = '';
+  renderCatTags();
+}
+function deleteCategory(cat) {
+  state.categories = state.categories.filter(c => c !== cat);
+  renderCatTags();
+}
+function renderCatTags() {
+  const el = document.getElementById('catTagsContainer');
+  el.innerHTML = '';
+  state.categories.forEach(cat => {
+    const span = document.createElement('span');
+    span.className = 'cat-tag';
+    span.innerHTML = `${cat} <button class="cat-tag-del" onclick="deleteCategory('${cat.replace(/'/g,"\\'")}')">✕</button>`;
+    el.appendChild(span);
+  });
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function render() {
+  renderSidebar();
+  renderRoomView();
+  // Sync currency select
+  const cs = document.getElementById('currencySelect');
+  if (cs) cs.value = state.currency;
+}
+
+function renderSidebar() {
+  // Totals
+  let totalEst = 0;
+  state.rooms.forEach(r => r.items.forEach(i => { if (!i.purchased) totalEst += i.price; }));
+
+  const pct = state.maxBudget > 0 ? Math.min((totalEst / state.maxBudget) * 100, 100) : 0;
+  const over = totalEst > state.maxBudget;
+
+  document.getElementById('budgetTotal').textContent = formatMoney(state.maxBudget);
+  document.getElementById('budgetTotal').className   = 'budget-total' + (over ? ' over' : '');
+  document.getElementById('budgetSub').textContent   = `Est. Total: ${formatMoney(totalEst)}`;
+  document.getElementById('budgetBar').style.width   = pct + '%';
+  document.getElementById('budgetBar').className     = 'budget-bar' + (over ? ' over' : '');
+
+  // Rooms list
+  const list = document.getElementById('roomsList');
+  list.innerHTML = '';
+  state.rooms.forEach(room => {
+    const pending = room.items.filter(i => !i.purchased).length;
+    const div = document.createElement('div');
+    div.className = 'room-item' + (state.activeRoom === room.id ? ' active' : '');
+    div.innerHTML = `
+      <span class="room-icon">${room.icon}</span>
+      <span class="room-name">${escHtml(room.name)}</span>
+      <div class="room-meta">
+        <span class="room-count">${pending}</span>
+        <button class="room-del" onclick="event.stopPropagation();deleteRoom('${room.id}')" title="Delete room">🗑</button>
+      </div>
+    `;
+    div.onclick = () => { state.activeRoom = room.id; state.activeFilter = 'all'; render(); };
+    div.querySelector('.room-icon').ondblclick = e => { e.stopPropagation(); openRoomModal(room.id); };
+    list.appendChild(div);
+  });
+}
+
+function renderRoomView() {
+  const noRoom  = document.getElementById('noRoomView');
+  const roomView = document.getElementById('roomView');
+  const fab      = document.getElementById('fabBtn');
+
+  if (!state.activeRoom) {
+    noRoom.style.display = 'flex'; roomView.style.display = 'none'; fab.style.display = 'none'; return;
+  }
+  const room = state.rooms.find(r => r.id === state.activeRoom);
+  if (!room) { state.activeRoom = null; render(); return; }
+
+  noRoom.style.display = 'none'; roomView.style.display = 'flex'; fab.style.display = 'flex';
+
+  document.getElementById('roomViewIcon').textContent = room.icon;
+  document.getElementById('roomViewName').textContent = room.name;
+
+  const pending = room.items.filter(i => !i.purchased).reduce((s,i) => s + i.price, 0);
+  document.getElementById('roomViewCost').innerHTML = `Pending: <strong>${formatMoney(pending)}</strong>`;
+
+  // Filters
+  const filtersBar = document.getElementById('filtersBar');
+  const filterOpts = [
+    { value: 'all',       label: '🗂 All' },
+    { value: 'necessary', label: '✅ Necessary' },
+    { value: 'later',     label: '⏳ Buy Later' },
+    { value: 'wishlist',  label: '✨ Wishlist' },
+    { value: 'purchased', label: '🛒 Purchased' },
+  ];
+  filtersBar.innerHTML = '';
+  filterOpts.forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (state.activeFilter === f.value ? ' active' : '');
+    btn.textContent = f.label;
+    btn.onclick = () => { state.activeFilter = f.value; render(); };
+    filtersBar.appendChild(btn);
+  });
+  // Category filters
+  const uniqueCats = [...new Set(room.items.map(i => i.category))];
+  uniqueCats.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (state.activeFilter === 'cat:' + cat ? ' active' : '');
+    btn.textContent = '📁 ' + cat;
+    btn.onclick = () => { state.activeFilter = 'cat:' + cat; render(); };
+    filtersBar.appendChild(btn);
+  });
+  const spacer = document.createElement('div');
+  spacer.className = 'filter-spacer';
+  filtersBar.appendChild(spacer);
+  const catMgBtn = document.createElement('button');
+  catMgBtn.className = 'filter-btn';
+  catMgBtn.textContent = '⚙ Categories';
+  catMgBtn.onclick = openCatModal;
+  filtersBar.appendChild(catMgBtn);
+
+  // Stats
+  const nec  = room.items.filter(i => i.priority==='necessary' && !i.purchased).length;
+  const lat  = room.items.filter(i => i.priority==='later'     && !i.purchased).length;
+  const wish = room.items.filter(i => i.priority==='wishlist'  && !i.purchased).length;
+  const pur  = room.items.filter(i => i.purchased).length;
+  document.getElementById('statsStrip').innerHTML = `
+    <div class="stat-chip"><span class="stat-dot" style="background:var(--green)"></span> <strong>${nec}</strong> Necessary</div>
+    <div class="stat-chip"><span class="stat-dot" style="background:var(--amber)"></span> <strong>${lat}</strong> Buy Later</div>
+    <div class="stat-chip"><span class="stat-dot" style="background:var(--blue)"></span>  <strong>${wish}</strong> Wishlist</div>
+    <div class="stat-chip"><span class="stat-dot" style="background:var(--muted)"></span> <strong>${pur}</strong> Purchased</div>
+  `;
+
+  // Items
+  let filtered;
+  if      (state.activeFilter === 'all')       filtered = room.items.filter(i => !i.purchased);
+  else if (state.activeFilter === 'purchased') filtered = room.items.filter(i =>  i.purchased);
+  else if (state.activeFilter.startsWith('cat:')) {
+    const cat = state.activeFilter.slice(4);
+    filtered = room.items.filter(i => i.category === cat && !i.purchased);
+  } else {
+    filtered = room.items.filter(i => i.priority === state.activeFilter && !i.purchased);
+  }
+
+  const grid  = document.getElementById('itemsGrid');
+  const empty = document.getElementById('emptyState');
+  grid.innerHTML = '';
+
+  if (filtered.length === 0) {
+    empty.style.display = 'flex'; grid.style.display = 'none';
+  } else {
+    empty.style.display = 'none'; grid.style.display = 'grid';
+    const PLABELS = { necessary:'✅ Necessary', later:'⏳ Buy Later', wishlist:'✨ Wishlist' };
+    const PCLASS  = { necessary:'priority-necessary', later:'priority-later', wishlist:'priority-wishlist' };
+    filtered.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'item-card' + (item.purchased ? ' purchased' : '');
+      card.innerHTML = `
+        <span class="card-priority ${PCLASS[item.priority] || 'priority-custom'}">${PLABELS[item.priority] || item.priority}</span>
+        <div class="card-name">${escHtml(item.name)}</div>
+        <div class="card-category">📁 ${escHtml(item.category)}</div>
+        ${item.notes ? `<div class="card-notes">${escHtml(item.notes)}</div>` : ''}
+        <div class="card-price">${formatMoney(item.price)}</div>
+        <div class="card-actions">
+          <button class="card-btn" onclick="openItemModal('${item.id}')">✏ Edit</button>
+          <button class="card-btn danger" onclick="deleteItem('${item.id}')">🗑 Delete</button>
+          <label class="purchased-toggle">
+            <input type="checkbox" ${item.purchased ? 'checked' : ''} onchange="togglePurchased('${item.id}')" /> Purchased
+          </label>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+}
+
+// ─── UTILITIES ────────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ─── MODAL CLOSE ON OVERLAY CLICK ─────────────────────────────────────────────
+['roomModalOverlay','itemModalOverlay','catModalOverlay','budgetModalOverlay'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    if (e.target.id === id) document.getElementById(id).classList.remove('open');
+  });
+});
+
+// ─── KEYBOARD SHORTCUTS ───────────────────────────────────────────────────────
+document.getElementById('roomNameInput').addEventListener('keydown', e => { if (e.key==='Enter') saveRoom(); });
+document.getElementById('newCatInput').addEventListener('keydown', e => { if (e.key==='Enter') addCategory(); });
+document.getElementById('budgetLimitInput').addEventListener('keydown', e => { if (e.key==='Enter') saveBudget(); });
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+load();
+
+// ═══════════════════════════════════════════════════════
+// HOMEBOT AI CHATBOT
+// ═══════════════════════════════════════════════════════
+let chatOpen = false;
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chatPanel').classList.toggle('open', chatOpen);
+  document.getElementById('chatFab').textContent = chatOpen ? '✕' : '🤖';
+  if (chatOpen && document.querySelectorAll('#chatMessages .chat-msg').length === 0) {
+    const roomNote = state.activeRoom ? '' : '\n\n⚠️ Select a room first so I can add items to it.';
+    appendBot(`👋 Hi! I'm **HomeBot**, your AI home setup assistant!\n\nTell me:\n• *"I need sofa, TV, coffee table"*\n• *"What do I need for a bedroom?"*\n• *"Add fridge as necessary at ${state.currency}25000"*\n\nI'll auto-categorize and add items to your current room.${roomNote}`);
+  }
+  if (chatOpen) setTimeout(() => document.getElementById('chatInput').focus(), 120);
+}
+
+function useSuggestion(btn) {
+  document.getElementById('chatInput').value = btn.textContent;
+  handleChatSend();
+}
+
+function appendBot(text, addedItems) {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg bot';
+  const html = text
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g,'<em>$1</em>')
+    .replace(/\n/g,'<br/>');
+  let extra = '';
+  if (addedItems && addedItems.length) {
+    extra = '<div class="chat-added-items">' +
+      addedItems.map(i => `<div class="chat-added-item">✅ ${escHtml(i.name)} — ${i.priority} · ${i.category} · ${formatMoney(i.price)}</div>`).join('') +
+      '</div>';
+  }
+  const t = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  div.innerHTML = `<div class="chat-bubble-text">${html}${extra}</div><span class="chat-time">${t}</span>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function appendUser(text) {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg user';
+  const t = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  div.innerHTML = `<div class="chat-bubble-text">${escHtml(text)}</div><span class="chat-time">${t}</span>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg bot'; div.id = 'typingIndicator';
+  div.innerHTML = '<div class="chat-typing"><div class="chat-dot"></div><div class="chat-dot"></div><div class="chat-dot"></div></div>';
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
+function hideTyping() { const el = document.getElementById('typingIndicator'); if (el) el.remove(); }
+
+// Rate limiter
+let _lastCall = 0;
+const COOLDOWN = 5000;
+
+async function callGemini(userMsg) {
+  const key = (typeof HOMEBASE_CONFIG !== 'undefined' && HOMEBASE_CONFIG.GEMINI_API_KEY && HOMEBASE_CONFIG.GEMINI_API_KEY !== 'PASTE_YOUR_KEY_HERE')
+    ? HOMEBASE_CONFIG.GEMINI_API_KEY : '';
+  if (!key) return { error: 'API key not configured. Open **config.js**, paste your Gemini key, save, and refresh.' };
+
+  const wait = COOLDOWN - (Date.now() - _lastCall);
+  if (wait > 0) {
+    for (let s = Math.ceil(wait/1000); s > 0; s--) {
+      document.getElementById('chatStatus').textContent = `⏳ Cooldown ${s}s…`;
+      await new Promise(r => setTimeout(r, 1000));
+    }
+    document.getElementById('chatStatus').textContent = '● AI-powered assistant';
+  }
+  _lastCall = Date.now();
+
+  const room = state.activeRoom ? state.rooms.find(r => r.id === state.activeRoom) : null;
+  const roomName = room ? room.name : 'unspecified';
+  const existing = room ? room.items.map(i => i.name).join(', ') || 'none' : 'none';
+  const currLabel = { '₹':'INR (India)', '$':'USD (US)', '€':'EUR (Europe)', '£':'GBP (UK)' }[state.currency] || state.currency;
+
+  const systemPrompt = `You are HomeBot, a practical home-setup advisor for young adults moving into their first home.
+
+Context:
+- Current room: ${roomName}
+- Items already here: ${existing}
+- Available categories: ${state.categories.join(', ')}
+- Current currency: ${state.currency} (${currLabel})
+
+PRIORITY RULES:
+- "necessary": Day 1 essentials — sleep, hygiene, basic cooking, safety.
+- "later": Important but can wait 2–4 weeks.
+- "wishlist": Nice-to-have, upgrades, or luxuries.
+
+RESPONSE FORMAT:
+1. A short friendly message (2–3 sentences) with brief priority reasoning.
+2. A JSON block with items — always include "reason".
+
+\`\`\`json
+[
+  {"name":"Mattress","price":8000,"priority":"necessary","category":"Bedding","notes":"Essential from Day 1","reason":"You cannot sleep on the floor."},
+  {"name":"Sofa","price":15000,"priority":"later","category":"Furniture","notes":"3-seater preferred","reason":"Floor seating works short-term."}
+]
+\`\`\`
+
+STRICT RULES:
+- priority must be exactly: necessary, later, or wishlist
+- category must be one of: ${state.categories.join(', ')}
+- prices must be realistic mid-range estimates in ${currLabel}
+- "reason" is mandatory
+- If the user is chatting (not requesting items), reply conversationally with NO JSON.
+
+User: ${userMsg}`;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) {
+      const delay = [8000,15000][attempt-1] || 15000;
+      for (let s = Math.ceil(delay/1000); s > 0; s--) {
+        document.getElementById('chatStatus').textContent = `⏳ Retrying in ${s}s…`;
+        await new Promise(r => setTimeout(r, 1000));
+      }
+      document.getElementById('chatStatus').textContent = '● AI-powered assistant';
+    }
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            contents: [{ role:'user', parts:[{ text: systemPrompt }] }],
+            generationConfig: { temperature: 0.5, maxOutputTokens: 1500 }
+          })
+        }
+      );
+      if (res.status === 429) { 
+        if (attempt < 2) continue; 
+        return { text: "I am currently over capacity! 🛑 But no worries, here is a mock suggestion to keep you going.\n\n```json\n[\n  {\"name\":\"Starter Item\",\"price\":500,\"priority\":\"necessary\",\"category\":\"Decor\",\"notes\":\"Offline fallback\",\"reason\":\"Added while AI is over capacity\"}\n]\n```" }; 
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        return { text: `My API connection is currently offline (Error ${err.error?.code || res.status}) 🔌! But here is a quick offline suggestion.\n\n\`\`\`json\n[\n  {\"name\":\"Example Item\",\"price\":999,\"priority\":\"later\",\"category\":\"Decor\",\"notes\":\"Offline fallback suggestion\",\"reason\":\"Added while AI is offline\"}\n]\n\`\`\`` };
+      }
+      const data = await res.json();
+      return { text: data.candidates?.[0]?.content?.parts?.[0]?.text || '' };
+    } catch(e) {
+      if (attempt < 2) continue;
+      return { error: 'Network error: ' + e.message };
+    }
+  }
+}
+
+function parseAndAddItems(text) {
+  const match = text.match(/```json\s*([\s\S]*?)```/);
+  if (!match) return [];
+  let items;
+  try { items = JSON.parse(match[1]); } catch(e) { return []; }
+  if (!Array.isArray(items) || !items.length) return [];
+  const room = state.rooms.find(r => r.id === state.activeRoom);
+  if (!room) return [];
+  const added = [];
+  items.forEach(item => {
+    if (!item.name) return;
+    const priority = ['necessary','later','wishlist'].includes(item.priority) ? item.priority : 'later';
+    const category = state.categories.includes(item.category) ? item.category : state.categories[0];
+    const reasonPart = item.reason ? `💡 ${item.reason}` : '';
+    const notesPart  = item.notes  ? item.notes : '';
+    const combined   = [reasonPart, notesPart].filter(Boolean).join(' · ');
+    const newItem = { id: uid(), name: item.name, price: parseFloat(item.price)||0, priority, category, notes: combined, purchased: false };
+    room.items.push(newItem);
+    added.push(newItem);
+  });
+  if (added.length) { save(); render(); }
+  return added;
+}
+
+async function handleChatSend() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  const sendBtn = document.getElementById('chatSend');
+  sendBtn.disabled = true;
+  document.getElementById('chatSuggestions').style.display = 'none';
+  appendUser(msg);
+
+  if (!state.activeRoom) {
+    appendBot('⚠️ Please select or create a room first — I need somewhere to put your items!');
+    sendBtn.disabled = false; return;
+  }
+  showTyping();
+  const result = await callGemini(msg);
+  hideTyping();
+
+  if (result.error) {
+    appendBot('❌ ' + result.error);
+  } else {
+    const added = parseAndAddItems(result.text);
+    const displayText = result.text.replace(/```json[\s\S]*?```/g,'').trim();
+    appendBot(displayText || (added.length ? 'Done! Items added to your room.' : 'Got it!'), added);
+  }
+  sendBtn.disabled = false;
+  setTimeout(() => input.focus(), 80);
+}
+
+document.getElementById('chatInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) handleChatSend();
+});
+</script>
+</body>
+</html>

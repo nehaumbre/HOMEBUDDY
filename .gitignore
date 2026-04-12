@@ -1,0 +1,4 @@
+# HomeBase
+config.js
+*.db
+.env
