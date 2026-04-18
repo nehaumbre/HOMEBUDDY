@@ -202,12 +202,17 @@ async function handleDelete() {
   .item-list-row {
     flex-wrap: wrap;
     gap: 0.8rem;
+    padding: 0.8rem 1rem;
   }
   .row-right {
     width: 100%;
+    margin-left: 2rem;
     justify-content: space-between;
-    border-top: 1px dashed #eee;
-    padding-top: 0.5rem;
+    border-top: 1px dashed var(--border-color);
+    padding-top: 0.6rem;
+    gap: 0.8rem;
   }
+  .total-price { font-size: 1rem; }
+  .item-name { font-size: 0.95rem; }
 }
 </style>

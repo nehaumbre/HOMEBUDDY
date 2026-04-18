@@ -135,6 +135,15 @@ const progressPercent = computed(() => {
   justify-content: space-between;
   gap: 1.5rem;
 }
+
+@media (max-width: 768px) {
+  .room-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem 1.5rem;
+    gap: 1rem;
+  }
+}
 .header-main {
   display: flex;
   flex-direction: column;
@@ -159,6 +168,14 @@ const progressPercent = computed(() => {
   flex-direction: column;
   align-items: flex-end;
   gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .header-dashboard {
+    width: 100%;
+    align-items: stretch;
+  }
+  .progress-box { width: 100%; }
 }
 .progress-box {
   background: var(--surface);
@@ -188,6 +205,7 @@ const progressPercent = computed(() => {
  .header-stats {
    display: flex;
    gap: 0.6rem;
+   flex-wrap: wrap;
  }
  .stat-pill {
    display: flex;
@@ -214,7 +232,18 @@ const progressPercent = computed(() => {
   background: var(--surface);
   border-bottom: var(--border-thin);
 }
-.filters-scroll { flex: 1; display: flex; align-items: center; gap: 0.5rem; overflow-x: auto; }
+.filters-scroll { 
+  flex: 1; 
+  display: flex; 
+  align-items: center; 
+  gap: 0.5rem; 
+  overflow-x: auto; 
+  padding: 0.4rem 0;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.filters-scroll::-webkit-scrollbar { display: none; }
+
 .filter-chip {
   padding: 0.3rem 0.8rem;
   border: 1.5px solid var(--border-color);
@@ -251,8 +280,17 @@ const progressPercent = computed(() => {
 .pop-list-enter-from { opacity: 0; transform: scale(0.5) rotate(-5deg); }
 .pop-list-leave-to { opacity: 0; transform: scale(0.8); }
 
-@media (max-width: 680px) {
-  .topbar, .filters-container, .stats-bar, .items-area { padding-left: 1rem; padding-right: 1rem; }
-  .items-grid { grid-template-columns: 1fr; }
+@media (max-width: 768px) {
+  .room-title { font-size: 1.6rem; }
+  .action-bar { padding: 0.6rem 1.5rem; }
+  .items-area { padding: 1rem 1.5rem; }
+  .empty-pop h3 { font-size: 1.2rem; }
+  .empty-pop p { font-size: 0.8rem; }
+}
+
+@media (max-width: 480px) {
+  .room-header { padding: 1rem; }
+  .action-bar { padding: 0.5rem 1rem; }
+  .items-area { padding: 1rem; }
 }
 </style>

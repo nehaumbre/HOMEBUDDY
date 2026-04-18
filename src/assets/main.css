@@ -174,11 +174,16 @@ input, textarea, select { font-family: var(--font); color: var(--text); }
   border: var(--border);
   border-radius: var(--radius);
   padding: 2rem;
-  width: 100%;
+  width: 92%;
   max-width: 500px;
   box-shadow: 12px 12px 0px var(--shadow-color);
   max-height: 90vh;
   overflow-y: auto;
+}
+
+@media (max-width: 480px) {
+  .modal { padding: 1.5rem; width: 95%; box-shadow: 8px 8px 0px var(--shadow-color); }
+  .modal-title { font-size: 1.3rem; }
 }
 .modal-title { 
   font-size: 1.6rem; 
@@ -220,6 +225,10 @@ input, textarea, select { font-family: var(--font); color: var(--text); }
   box-shadow: var(--shadow-sm);
 }
 .form-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+@media (max-width: 500px) {
+  .form-2col { grid-template-columns: 1fr; }
+}
 
 /* ═══════════════════════════════════════════════════════
    MODAL ACTIONS
@@ -292,3 +301,10 @@ input, textarea, select { font-family: var(--font); color: var(--text); }
   filter: grayscale(1) contrast(3) brightness(0);
   opacity: 1;
 }
+
+/* Base Responsive Overrides */
+@media (max-width: 768px) {
+  html { font-size: 14px; }
+  .neo-button { padding: 0.6rem 1.2rem; }
+}
+

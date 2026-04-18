@@ -1,12 +1,27 @@
 <template>
   <div class="app">
     <Sidebar
+      :is-open="isSidebarOpen"
+      @close-sidebar="isSidebarOpen = false"
       @open-budget-modal="budgetModalOpen = true"
       @open-room-modal="openRoomModal(null)"
       @edit-room="openRoomModal"
     />
 
+    <div class="sidebar-backdrop" v-if="isSidebarOpen" @click="isSidebarOpen = false"></div>
+
     <div class="main">
+      <!-- Mobile Top Bar -->
+      <header class="mobile-top-bar">
+        <button class="menu-toggle" @click="isSidebarOpen = true">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <span class="mobile-logo">HOMEBUDDY</span>
+      </header>
       <!-- No room selected -->
       <div v-if="!data.activeRoom" class="no-room">
         <div class="no-room-icon">🛋️</div>
@@ -58,6 +73,7 @@ import ToastNotification from '@/components/ToastNotification.vue'
 
 const data = useDataStore()
 
+const isSidebarOpen    = ref(false)
 const roomModalOpen   = ref(false)
 const itemModalOpen   = ref(false)
 const budgetModalOpen = ref(false)
@@ -135,7 +151,50 @@ function openItemModal(itemId = null) {
 .fab:hover { transform: translate(-3px, -3px); box-shadow: 8px 8px 0px #000; }
 .fab:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #000; }
 
+@media (max-width: 1024px) {
+  .app { flex-direction: column; }
+  .mobile-top-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: var(--secondary);
+    border-bottom: var(--border-thin);
+    z-index: 50;
+  }
+  .menu-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    color: var(--text);
+  }
+  .mobile-logo {
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    font-size: 1.2rem;
+    color: var(--text);
+  }
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(2px);
+    z-index: 900;
+  }
+}
+
+.mobile-top-bar { display: none; }
+
 @media (max-width: 480px) {
   .main { width: 100%; }
+  .fab {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    padding: 0.8rem 1.2rem;
+    font-size: 0.85rem;
+  }
 }
 </style>

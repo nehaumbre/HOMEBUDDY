@@ -1,5 +1,5 @@
 <template>
-  <aside class="sidebar">
+  <aside class="sidebar" :class="{ 'drawer-open': isOpen }">
     <!-- Header -->
     <div class="sidebar-head">
       <div class="app-logo">
@@ -8,6 +8,7 @@
           <polyline points="9 22 9 12 15 12 15 22"></polyline>
         </svg>
         <span class="app-logo-text">HOMEBUDDY</span>
+        <button class="mobile-close-btn" @click="$emit('closeSidebar')">✕</button>
       </div>
       
       <div class="settings-row">
@@ -112,7 +113,10 @@ import { useAuthStore } from '@/stores/auth'
 import { useDataStore } from '@/stores/data'
 import { useToast } from '@/composables/useToast'
 
-const emit = defineEmits(['openBudgetModal', 'openRoomModal', 'editRoom'])
+const props = defineProps({
+  isOpen: Boolean
+})
+const emit = defineEmits(['openBudgetModal', 'openRoomModal', 'editRoom', 'closeSidebar'])
 
 const auth   = useAuthStore()
 const data   = useDataStore()
@@ -128,6 +132,7 @@ const initials = computed(() => {
 function selectRoom(id) {
   data.activeRoom = id
   data.activeFilter = 'all'
+  emit('closeSidebar')
 }
 
 async function handleSignOut() {
@@ -161,9 +166,34 @@ async function handleReset() {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  z-index: 10;
+  z-index: 1001; 
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.mobile-close-btn { display: none; }
+
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+    box-shadow: 10px 0 30px rgba(0,0,0,0.2);
+  }
+  .sidebar.drawer-open {
+    transform: translateX(0);
+  }
+  .mobile-close-btn {
+    display: flex;
+    margin-left: auto;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: var(--text);
+    cursor: pointer;
+  }
+}
 .sidebar-head {
   padding: 1.5rem;
   border-bottom: var(--border-thin);
@@ -299,5 +329,4 @@ async function handleReset() {
 }
 .add-room-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--primary); }
 
-@media (max-width: 480px) { .sidebar { display: none; } }
 </style>
