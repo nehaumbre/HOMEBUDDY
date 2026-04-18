@@ -44,14 +44,22 @@
               required 
             />
           </div>
-          <div class="form-row">
+          <div class="form-row password-row">
             <input 
               v-model="password" 
-              type="password" 
+              :type="showPassword ? 'text' : 'password'" 
               class="form-input" 
               placeholder="PASSWORD" 
               required 
             />
+            <button 
+              type="button" 
+              class="password-toggle" 
+              @click="showPassword = !showPassword"
+              tabindex="-1"
+            >
+              {{ showPassword ? 'HIDE' : 'SHOW' }}
+            </button>
           </div>
           <button 
             type="submit" 
@@ -112,6 +120,7 @@ const isLoading = ref(false)
 const errorMsg = ref('')
 const authMode = ref('login') // 'login' or 'register'
 const guestHover = ref(false)
+const showPassword = ref(false)
 
 const email = ref('')
 const password = ref('')
@@ -265,6 +274,29 @@ async function handleGuestSignIn() {
 .auth-submit-btn {
   width: 100%;
   margin-top: 0.5rem;
+}
+
+.password-row {
+  position: relative;
+}
+.password-toggle {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 0.65rem;
+  color: #888;
+  cursor: pointer;
+  padding: 5px;
+  z-index: 5;
+  transition: color 0.2s;
+}
+.password-toggle:hover {
+  color: #000;
 }
 
 .login-divider {

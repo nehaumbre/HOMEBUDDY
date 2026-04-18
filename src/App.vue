@@ -3,6 +3,14 @@
 </template>
 
 <script setup>
-// App root: just renders the current route view.
-// Modals & toasts are handled inside AppView to keep auth-unrelated state clean.
+import { useDataStore } from '@/stores/data'
+import { watchEffect } from 'vue'
+
+const data = useDataStore()
+
+watchEffect(() => {
+  if (data.theme) {
+    document.documentElement.className = `theme-${data.theme}`
+  }
+})
 </script>

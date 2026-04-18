@@ -1,28 +1,37 @@
 <template>
-  <div class="item-card" :class="{ purchased: item.purchased }">
-    <div class="card-top">
-      <span class="priority-tag" :class="item.priority">{{ priorityLabel }}</span>
-      <span class="cat-tag">📁 {{ item.category }}</span>
+  <div class="item-list-row" :class="{ purchased: item.purchased }">
+    <!-- Left: Status & Priority -->
+    <div class="row-left">
+      <label class="check-wrap">
+        <input
+          type="checkbox"
+          :checked="item.purchased"
+          @change="data.togglePurchased(roomId, item.id)"
+        />
+      </label>
+      <div class="priority-dot" :class="item.priority" :title="priorityLabel"></div>
     </div>
 
-    <div class="card-main">
-      <h4 class="item-name">{{ item.name }}</h4>
+    <!-- Center: Details -->
+    <div class="row-main">
+      <div class="name-qty">
+        <span class="item-name">{{ item.name }}</span>
+        <span v-if="(item.quantity || 1) > 1" class="qty-tag">x{{ item.quantity }}</span>
+      </div>
       <p v-if="item.notes" class="item-notes">{{ item.notes }}</p>
+      <div class="cat-tag">📁 {{ item.category }}</div>
     </div>
 
-    <div class="card-bottom">
-      <div class="price-bubble">{{ data.formatMoney(item.price) }}</div>
-      <div class="card-actions">
-        <button class="icon-btn" @click="$emit('edit')">✏️</button>
-        <button class="icon-btn danger" @click="handleDelete">🗑️</button>
-        <label class="check-wrap">
-          <input
-            type="checkbox"
-            :checked="item.purchased"
-            @change="data.togglePurchased(roomId, item.id)"
-          />
-          <span class="check-label">BOUGHT</span>
-        </label>
+    <!-- Right: Price & Actions -->
+    <div class="row-right">
+      <div class="price-info">
+        <div class="total-price">{{ data.formatMoney(item.price * (item.quantity || 1)) }}</div>
+        <div v-if="(item.quantity || 1) > 1" class="unit-price">UNIT: {{ data.formatMoney(item.price) }}</div>
+      </div>
+      
+      <div class="row-actions">
+        <button class="icon-btn" @click="$emit('edit')" title="Edit">✏️</button>
+        <button class="icon-btn danger" @click="handleDelete" title="Delete">🗑️</button>
       </div>
     </div>
   </div>
@@ -53,92 +62,152 @@ async function handleDelete() {
 </script>
 
 <style scoped>
-.item-card {
-  background: #fff;
-  border: var(--border);
-  border-radius: var(--radius);
-  padding: 1.2rem;
+.item-list-row {
+  background: var(--surface);
+  color: var(--text);
+  border: var(--border-thin);
+  border-left: 6px solid var(--border-color);
+  padding: 0.8rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  transition: all var(--t);
+  box-shadow: 4px 4px 0px var(--shadow-color);
+  margin-bottom: 0.5rem;
+}
+
+.item-list-row:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 6px 6px 0px var(--shadow-color);
+  border-left-width: 10px;
+}
+
+.item-list-row.purchased {
+  opacity: 0.5;
+  background: var(--bg);
+  border-left-color: var(--text-muted);
+}
+
+/* Left Section */
+.row-left {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.check-wrap input {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--border-color);
+}
+.priority-dot {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+}
+.priority-dot.necessary { background: var(--primary); }
+.priority-dot.later     { background: var(--secondary); }
+.priority-dot.wishlist  { background: var(--accent); }
+
+/* Main Section */
+.row-main {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  box-shadow: 6px 6px 0px #000;
-  transition: all var(--t);
-  position: relative;
+  gap: 0.1rem;
 }
-.item-card:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 10px 10px 0px #000;
+.name-qty {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
 }
-.item-card.purchased {
-  opacity: 0.6;
-}
-
-.card-top { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.priority-tag {
-  padding: 0.2rem 0.6rem;
-  font-size: 0.65rem;
-  font-weight: 900;
-  border: 1.5px solid #000;
-  box-shadow: 2px 2px 0px #000;
-  text-transform: uppercase;
-}
-.priority-tag.necessary { background: var(--primary); }
-.priority-tag.later     { background: var(--secondary); }
-.priority-tag.wishlist  { background: #FFC0CB; }
-
-.cat-tag { font-size: 0.7rem; font-weight: 700; color: #666; }
-
 .item-name {
-  font-size: 1.2rem;
   font-weight: 900;
+  font-size: 1.05rem;
   text-transform: uppercase;
-  color: #000;
-  margin-bottom: 0.3rem;
-  line-height: 1.2;
+}
+.qty-tag {
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: var(--bg);
+  color: var(--text);
+  padding: 1px 6px;
+  border: 1.5px solid var(--border-color);
 }
 .item-notes {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #444;
-  line-height: 1.4;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin: 2px 0;
+}
+.cat-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
 }
 
-.card-bottom {
-  margin-top: auto;
+/* Right Section */
+.row-right {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding-top: 1rem;
-  border-top: var(--border-thin);
+  gap: 1.5rem;
 }
 
-.price-bubble {
-  background: #000;
-  color: #fff;
-  padding: 4px 10px;
+.price-info {
+  text-align: right;
+  min-width: 80px;
+}
+.total-price {
   font-weight: 900;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+.unit-price {
+  font-size: 0.6rem;
+  font-weight: 900;
+  color: var(--text-muted);
+  text-transform: uppercase;
 }
 
-.card-actions {
+.row-actions {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 .icon-btn {
-  width: 32px; height: 32px;
-  display: flex; align-items: center; justify-content: center;
-  border: 2px solid #000;
-  background: #fff;
-  box-shadow: 2px 2px 0px #000;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.8rem;
   transition: all var(--t);
-  font-size: 0.9rem;
 }
-.icon-btn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0px #000; }
-.icon-btn:active { transform: translate(1px, 1px); box-shadow: 0px 0px 0px #000; }
-.icon-btn.danger:hover { background: var(--accent); color: #fff; }
+.icon-btn:hover {
+  background: var(--bg);
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0px var(--shadow-color);
+}
+.icon-btn.danger:hover {
+  background: var(--accent);
+  color: var(--white);
+}
 
-.check-wrap { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
-.check-wrap input { width: 16px; height: 16px; accent-color: #000; cursor: pointer; }
-.check-label { font-size: 0.65rem; font-weight: 900; }
+@media (max-width: 600px) {
+  .item-list-row {
+    flex-wrap: wrap;
+    gap: 0.8rem;
+  }
+  .row-right {
+    width: 100%;
+    justify-content: space-between;
+    border-top: 1px dashed #eee;
+    padding-top: 0.5rem;
+  }
+}
 </style>

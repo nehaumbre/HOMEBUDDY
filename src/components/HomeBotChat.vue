@@ -135,11 +135,6 @@ let lastCallTime = 0
 const COOLDOWN = 3000
 
 async function callGemini(userMsg) {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY
-  if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-    return { error: 'API KEY MISSING!' }
-  }
-
   const wait = COOLDOWN - (Date.now() - lastCallTime)
   if (wait > 0) await new Promise(r => setTimeout(r, wait))
   lastCallTime = Date.now()
@@ -147,31 +142,25 @@ async function callGemini(userMsg) {
   const room = data.activeRoomData
   const roomName = room ? room.name : 'unspecified'
   const existing = room ? room.items.map(i => i.name).join(', ') || 'none' : 'none'
-
-  const systemPrompt = `You are HomeBot, a practical home-setup advisor. RETRO POP style.
-Context: Room: ${roomName}, Currency: ${data.currency}, Existing: ${existing}.
-CATEGORIES: ${data.categories.join(', ')}.
-PRIORITIES: necessary, later, wishlist.
-RESPONSE: 2 sentences max + JSON block of items. Realistic prices in ${data.currency}.
-\`\`\`json
-[{"name":"Item","price":100,"priority":"necessary","category":"Furniture","reason":"Reason"}]
-\`\`\``
+  const categoriesText = data.categories.join(', ')
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    const res = await fetch('/api/chat',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: systemPrompt + "\nUser: " + userMsg }] }],
-          generationConfig: { temperature: 0.5, maxOutputTokens: 1000 }
+          userMsg,
+          roomName,
+          currency: data.currency,
+          existing,
+          categories: categoriesText
         })
       }
     )
-    if (!res.ok) return { error: 'API ERROR' }
     const resData = await res.json()
-    return { text: resData.candidates?.[0]?.content?.parts?.[0]?.text || '' }
+    if (!res.ok) return { error: resData.error || 'API ERROR' }
+    return { text: resData.text || '' }
   } catch (e) {
     return { error: 'NETWORK ERROR' }
   }
@@ -227,29 +216,34 @@ async function send() {
 .chat-fab {
   position: fixed;
   bottom: 2rem;
-  right: 11rem;
+  left: 19rem; /* 280px + 24px */
   width: 60px; height: 60px;
   background: var(--primary);
   border: var(--border);
-  box-shadow: 4px 4px 0px #000;
+  box-shadow: 4px 4px 0px var(--shadow-color);
   font-size: 1.5rem;
+  color: var(--white);
   display: flex; align-items: center; justify-content: center;
   z-index: 800; transition: all var(--t);
 }
-.chat-fab:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px #000; }
-.chat-fab.open { background: #000; color: #fff; }
+.chat-fab:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--shadow-color); }
+.chat-fab.open { background: var(--text); color: var(--surface); }
 
 .chat-panel {
   position: fixed;
   bottom: 6.5rem;
-  right: 2rem;
+  left: 19rem;
   width: 380px;
   max-height: 500px;
-  background: #fff;
+  background: var(--surface);
   border: var(--border);
-  box-shadow: 10px 10px 0px #000;
+  box-shadow: 10px 10px 0px var(--shadow-color);
   display: flex; flex-direction: column;
   z-index: 900; overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .chat-fab, .chat-panel { left: 2rem; }
 }
 
 .chat-header {
@@ -259,15 +253,15 @@ async function send() {
   display: flex; align-items: center; gap: 0.8rem;
 }
 .chat-avatar {
-  background: #000; color: #fff;
+  background: var(--text); color: var(--surface);
   width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
   font-weight: 900;
 }
 .chat-info { flex: 1; }
-.chat-name { font-weight: 900; font-size: 0.8rem; letter-spacing: 0.05em; }
-.chat-status { font-size: 0.6rem; font-weight: 800; color: #000; }
-.chat-close-btn { font-size: 0.6rem; font-weight: 900; border: 1.5px solid #000; padding: 2px 6px; }
+.chat-name { font-weight: 900; font-size: 0.8rem; letter-spacing: 0.05em; color: var(--text); }
+.chat-status { font-size: 0.6rem; font-weight: 800; color: var(--text); }
+.chat-close-btn { font-size: 0.6rem; font-weight: 900; border: 1.5px solid var(--border-color); padding: 2px 6px; background: var(--surface); color: var(--text); }
 
 .chat-messages {
   flex: 1; overflow-y: auto;
@@ -281,29 +275,31 @@ async function send() {
 
 .chat-bubble {
   padding: 0.8rem;
-  border: 2px solid #000;
+  border: 2px solid var(--border-color);
   font-size: 0.8rem;
   font-weight: 700;
-  box-shadow: 3px 3px 0px #000;
+  box-shadow: 3px 3px 0px var(--shadow-color);
+  color: var(--text);
 }
-.chat-msg.bot .chat-bubble { background: #fff; }
-.chat-msg.user .chat-bubble { background: var(--secondary); }
+.chat-msg.bot .chat-bubble { background: var(--surface); }
+.chat-msg.user .chat-bubble { background: var(--secondary); color: var(--text); }
 
 .chat-time { font-size: 0.55rem; font-weight: 800; margin-top: 0.2rem; padding: 0 4px; }
 .chat-msg.user .chat-time { align-self: flex-end; }
 
-.chat-added-items { margin-top: 0.6rem; border-top: 1px dashed #000; padding-top: 0.4rem; display: flex; flex-direction: column; gap: 0.2rem; }
-.chat-added-item { font-size: 0.7rem; font-weight: 900; color: #000; }
+.chat-added-items { margin-top: 0.6rem; border-top: 1px dashed var(--border-color); padding-top: 0.4rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.chat-added-item { font-size: 0.7rem; font-weight: 900; color: var(--text); }
 
 .chat-suggestions { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.6rem 1rem; background: var(--bg); }
-.chat-tag { font-size: 0.65rem; font-weight: 900; border: 1.5px solid #000; padding: 2px 8px; background: #fff; box-shadow: 2px 2px 0px #000; }
+.chat-tag { font-size: 0.65rem; font-weight: 900; border: 1.5px solid var(--border-color); padding: 2px 8px; background: var(--surface); color: var(--text); box-shadow: 2px 2px 0px var(--shadow-color); cursor: pointer; transition: all var(--t); }
+.chat-tag:hover { background: var(--bg); transform: translate(-1px,-1px); box-shadow: 3px 3px 0px var(--shadow-color); }
 
-.chat-input-row { display: flex; gap: 0.5rem; padding: 0.8rem 1rem; border-top: var(--border-thin); background: #fff; }
-.chat-input { flex: 1; border: 2px solid #000; padding: 0.5rem; font-weight: 900; font-size: 0.8rem; text-transform: uppercase; }
-.chat-send { background: var(--primary); font-weight: 900; padding: 0 1rem; border: 2px solid #000; box-shadow: 3px 3px 0px #000; }
+.chat-input-row { display: flex; gap: 0.5rem; padding: 0.8rem 1rem; border-top: var(--border-thin); background: var(--surface); }
+.chat-input { flex: 1; border: 2px solid var(--border-color); padding: 0.5rem; font-weight: 900; font-size: 0.8rem; text-transform: uppercase; background: var(--bg); color: var(--text); }
+.chat-send { background: var(--primary); font-weight: 900; padding: 0 1rem; border: 2px solid var(--border-color); box-shadow: 3px 3px 0px var(--shadow-color); color: var(--text); cursor: pointer; }
 
 .typing { display: flex; gap: 4px; align-items: center; width: fit-content; }
-.chat-dot { width: 5px; height: 5px; background: #000; border-radius: 50%; animation: pop 1s infinite; }
+.chat-dot { width: 5px; height: 5px; background: var(--text); border-radius: 50%; animation: pop 1s infinite; }
 .chat-dot:nth-child(2) { animation-delay: 0.2s; }
 .chat-dot:nth-child(3) { animation-delay: 0.4s; }
 @keyframes pop { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.5); } }

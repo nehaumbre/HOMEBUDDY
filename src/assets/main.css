@@ -1,27 +1,102 @@
 /* ═══════════════════════════════════════════════════════
    DESIGN TOKENS - RETRO POP / NEO-BRUTALIST
 ═══════════════════════════════════════════════════════ */
-:root {
-  /* Palette */
-  --bg:           #FFD1DC; /* Baby Pink */
+:root, :root.theme-pop {
+  /* Memphis / Retro Pop Palette (Vibrant and balanced) */
+  --bg:           #FEF9EF; /* Warm off-white */
   --surface:      #FFFFFF;
-  --primary:      #32CD32; /* Lime Green */
-  --secondary:    #FFEA00; /* Yellow */
-  --accent:       #FF4500; /* Orange-Red for highlights */
+  --primary:      #4361EE; /* Bold Indigo Blue */
+  --secondary:    #FFD166; /* Radiant Yellow */
+  --accent:       #EF476F; /* Hot Pink (used for alerts/heat) */
   
-  --text:         #000000;
-  --text-muted:   #333333;
+  --text:         #0B090A;
+  --text-muted:   #495057;
   --white:        #FFFFFF;
+  --border-color: #000000;
+  --shadow-color: #000000;
   
   /* Neo-Brutalist elements */
-  --border:       3px solid #000000;
-  --border-thin:  2px solid #000000;
-  --shadow:       6px 6px 0px #000000;
-  --shadow-sm:    3px 3px 0px #000000;
-  --radius:       4px;
+  --border:       3px solid var(--border-color);
+  --border-thin:  2px solid var(--border-color);
+  --shadow:       5px 5px 0px var(--shadow-color);
+  --shadow-sm:    3px 3px 0px var(--shadow-color);
+  --radius:       0px;
   
   --font:         'Lexend', sans-serif;
-  --t:            0.15s cubic-bezier(.4,0,.2,1);
+  --t:            0.1s cubic-bezier(.4,0,.2,1);
+}
+
+:root.theme-vaporwave {
+  /* 80s Synthwave aesthetic */
+  --bg:           #1A0B2E; 
+  --surface:      #2A1846;
+  --primary:      #FF00AA; 
+  --secondary:    #00E5FF;
+  --accent:       #FF3366; 
+  --text:         #FFFFFF;
+  --text-muted:   #D8B4E2;
+  --border-color: #00E5FF;
+  --shadow-color: #FF00AA;
+  
+  --border:       3px solid var(--border-color);
+  --border-thin:  2px solid var(--border-color);
+  --shadow:       5px 5px 0px var(--shadow-color);
+  --shadow-sm:    3px 3px 0px var(--shadow-color);
+}
+
+:root.theme-cyberpunk {
+  /* Cyberpunk 2077 Vibe */
+  --bg:           #09090B; /* Deep dark */
+  --surface:      #18181B; /* Dark grey for cards */
+  --primary:      #FCEE09; /* Cyber Yellow */
+  --secondary:    #1F1F22; /* Darker grey for sidebar/bubbles */
+  --accent:       #FF003C; /* Cyber Red for alerts/destructives */
+  
+  --text:         #E0E0E0;
+  --text-muted:   #A1A1AA;
+  --border-color: #00FFFF; /* Neon Cyan Borders */
+  --shadow-color: #FF003C; /* Neon Pink Shadows */
+
+  --border:       3px solid var(--border-color);
+  --border-thin:  2px solid var(--border-color);
+  --shadow:       5px 5px 0px var(--shadow-color);
+  --shadow-sm:    3px 3px 0px var(--shadow-color);
+}
+
+:root.theme-miami {
+  /* Miami Retrowave */
+  --bg:           #FFE5D9;
+  --surface:      #FFFFFF;
+  --primary:      #F72585; /* Hot Pink */
+  --secondary:    #4CC9F0; /* Bright Cyan */
+  --accent:       #FF9E00; /* Neon Orange */
+  
+  --text:         #1A1A1A;
+  --text-muted:   #505050;
+  --border-color: #000000;
+  --shadow-color: #000000;
+  --border:       3px solid var(--border-color);
+  --border-thin:  2px solid var(--border-color);
+  --shadow:       5px 5px 0px var(--shadow-color);
+  --shadow-sm:    3px 3px 0px var(--shadow-color);
+}
+
+:root.theme-mint {
+  /* Original Vintage Mint Palette */
+  --bg:           #F4F8F4;
+  --surface:      #FFFFFF;
+  --primary:      #2D5A27;
+  --secondary:    #A3D9A5;
+  --accent:       #E67E22;
+  
+  --text:         #1A221A;
+  --text-muted:   #4B524B;
+  --border-color: #000000;
+  --shadow-color: #000000;
+  --border:       3px solid var(--border-color);
+  --border-thin:  2px solid var(--border-color);
+  --shadow:       5px 5px 0px var(--shadow-color);
+  --shadow-sm:    3px 3px 0px var(--shadow-color);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -33,7 +108,6 @@ body {
   font-family: var(--font);
   background: var(--bg);
   background-image: 
-    radial-gradient(#000000 1px, transparent 0);
   background-size: 30px 30px;
   color: var(--text);
   min-height: 100vh;
@@ -65,9 +139,9 @@ input, textarea, select { font-family: var(--font); color: var(--text); }
   align-items: center;
   justify-content: center;
   padding: 0.8rem 1.5rem;
-  font-weight: 800;
+  font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   background: var(--secondary);
   border: var(--border);
   box-shadow: var(--shadow);
@@ -75,11 +149,11 @@ input, textarea, select { font-family: var(--font); color: var(--text); }
 }
 .neo-button:hover {
   transform: translate(-2px, -2px);
-  box-shadow: 8px 8px 0px #000;
+  box-shadow: 8px 8px 0px var(--shadow-color);
 }
 .neo-button:active {
   transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px #000;
+  box-shadow: 2px 2px 0px var(--shadow-color);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -88,7 +162,7 @@ input, textarea, select { font-family: var(--font); color: var(--text); }
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(255, 209, 220, 0.8);
+  background: rgba(46, 90, 136, 0.4); /* Mask with secondary color */
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -102,16 +176,17 @@ input, textarea, select { font-family: var(--font); color: var(--text); }
   padding: 2rem;
   width: 100%;
   max-width: 500px;
-  box-shadow: 12px 12px 0px #000;
+  box-shadow: 12px 12px 0px var(--shadow-color);
   max-height: 90vh;
   overflow-y: auto;
 }
 .modal-title { 
-  font-size: 1.5rem; 
+  font-size: 1.6rem; 
   font-weight: 900; 
   margin-bottom: 1.5rem; 
   text-transform: uppercase;
-  color: var(--text);
+  letter-spacing: -0.02em;
+  color: var(--primary); /* Title in primary green */
   border-bottom: var(--border-thin);
   padding-bottom: 0.5rem;
 }
@@ -122,17 +197,18 @@ input, textarea, select { font-family: var(--font); color: var(--text); }
 .form-row { margin-bottom: 1.2rem; }
 .form-label {
   display: block;
-  font-size: 0.9rem;
-  font-weight: 800;
+  font-size: 0.85rem;
+  font-weight: 900;
   margin-bottom: 0.5rem;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 .form-input, .form-select, .form-textarea {
   width: 100%;
-  background: #fff;
+  background: var(--surface);
   border: var(--border-thin);
   border-radius: var(--radius);
-  color: #000;
+  color: var(--text);
   padding: 0.8rem 1rem;
   font-size: 1rem;
   font-weight: 500;
@@ -152,7 +228,7 @@ input, textarea, select { font-family: var(--font); color: var(--text); }
 .btn-primary {
   flex: 1;
   background: var(--primary);
-  color: #000;
+  color: var(--white); /* Was #000, changing to white for better primary contrast on dark / light, or use --surface */
   border: var(--border-thin);
   box-shadow: var(--shadow-sm);
   padding: 0.8rem;
@@ -162,7 +238,7 @@ input, textarea, select { font-family: var(--font); color: var(--text); }
 }
 .btn-primary:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 5px 5px 0px #000;
+  box-shadow: 5px 5px 0px var(--shadow-color);
 }
 .btn-ghost {
   padding: 0.8rem 1.5rem;
@@ -196,9 +272,23 @@ input, textarea, select { font-family: var(--font); color: var(--text); }
 }
 .pop-hover:hover {
   transform: translate(-3px, -3px);
-  box-shadow: 6px 6px 0px #000 !important;
+  box-shadow: 6px 6px 0px var(--shadow-color) !important;
 }
 .pop-hover:active {
   transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px #000 !important;
+  box-shadow: 1px 1px 0px var(--shadow-color) !important;
+}
+
+/* -------------------------------------------------------
+   ICON STYLING - MONOCHROMATIC VINTAGE
+   ------------------------------------------------------- */
+.bold-black-icon {
+  filter: grayscale(1) contrast(2) brightness(0.2);
+  opacity: 0.95;
+  display: inline-block;
+  transition: all var(--t);
+}
+.bold-black-icon:hover {
+  filter: grayscale(1) contrast(3) brightness(0);
+  opacity: 1;
 }

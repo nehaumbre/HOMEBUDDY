@@ -1,18 +1,40 @@
 <template>
   <div class="main-content">
-    <!-- Retro Top Bar -->
-    <div class="topbar">
-      <div class="topbar-info">
-        <span class="room-emoji">{{ room.icon }}</span>
-        <h2 class="room-title">{{ room.name }}</h2>
+    <!-- Unified Header & Stats -->
+    <div class="room-header">
+      <div class="header-main">
+        <div class="title-group">
+          <span class="room-emoji bold-black-icon">{{ room.icon }}</span>
+          <div class="title-meta">
+            <h2 class="room-title">{{ room.name }}</h2>
+            <div class="room-pending-meta">PENDING: {{ data.formatMoney(pendingCost) }}</div>
+          </div>
+        </div>
+        <div class="header-stats">
+          <div class="stat-pill green"><span>NECESSARY</span> <strong>{{ stats.nec }}</strong></div>
+          <div class="stat-pill yellow"><span>LATER</span> <strong>{{ stats.lat }}</strong></div>
+          <div class="stat-pill pink"><span>WISHLIST</span> <strong>{{ stats.wish }}</strong></div>
+        </div>
       </div>
-      <div class="topbar-stats">
-        EST. PENDING: <span class="highlight">{{ data.formatMoney(pendingCost) }}</span>
+      
+      <!-- Room Dashboard / Space Experiment -->
+      <div class="header-dashboard">
+        <div class="progress-box">
+          <label class="progress-label">ROOM PROGRESS</label>
+          <div class="mini-progress-bg">
+            <div class="mini-progress-bar" :style="{ width: progressPercent + '%' }"></div>
+          </div>
+          <div class="progress-text">{{ stats.pur }} / {{ (room.items?.length || 0) }} BOUGHT</div>
+        </div>
+        
+        <div class="header-actions">
+          <button class="header-btn" @click="$emit('editRoom', room.id)">EDIT</button>
+        </div>
       </div>
     </div>
 
-    <!-- Pop Filter Bar -->
-    <div class="filters-container">
+    <!-- Filter & Category Bar -->
+    <div class="action-bar">
       <div class="filters-scroll">
         <button
           v-for="f in filterOptions"
@@ -33,20 +55,11 @@
         >📁 {{ cat }}</button>
       </div>
       
-      <button class="manage-cat-btn" @click="$emit('openCatModal')">⚙️ CATEGORIES</button>
+      <button class="manage-cat-btn" @click="$emit('openCatModal')">⚙️ MANAGE</button>
     </div>
 
-    <!-- Aggressive Stats Bar -->
-    <div class="stats-bar">
-      <div class="stat-pill green"><span>✅ NECESSARY</span> <strong>{{ stats.nec }}</strong></div>
-      <div class="stat-pill yellow"><span>⏳ BUY LATER</span> <strong>{{ stats.lat }}</strong></div>
-      <div class="stat-pill pink"><span>✨ WISHLIST</span> <strong>{{ stats.wish }}</strong></div>
-      <div class="stat-pill black"><span>🛒 BOUGHT</span> <strong>{{ stats.pur }}</strong></div>
-    </div>
-
-    <!-- Items Grid (Bento Style) -->
     <div class="items-area">
-      <TransitionGroup name="pop-list" tag="div" class="items-grid" v-if="data.filteredItems.length">
+      <TransitionGroup name="pop-list" tag="div" class="items-list" v-if="data.filteredItems.length">
         <ItemCard
           v-for="item in data.filteredItems"
           :key="item.id"
@@ -58,7 +71,7 @@
 
       <!-- Empty State -->
       <div v-else class="empty-pop">
-        <div class="empty-icon">🛋️</div>
+        <div class="empty-icon bold-black-icon">🛋️</div>
         <h3>THIS ROOM IS EMPTY</h3>
         <p>HIT THAT "ADD ITEM" BUTTON BELOW TO POPULATE IT!</p>
       </div>
@@ -71,13 +84,13 @@ import { computed } from 'vue'
 import { useDataStore } from '@/stores/data'
 import ItemCard from './ItemCard.vue'
 
-defineEmits(['openItemModal', 'editItem', 'openCatModal'])
+defineEmits(['openItemModal', 'editItem', 'openCatModal', 'editRoom'])
 
 const data = useDataStore()
 const room = computed(() => data.activeRoomData)
 
 const pendingCost = computed(() =>
-  room.value?.items.filter(i => !i.purchased).reduce((s, i) => s + i.price, 0) ?? 0
+  room.value?.items.filter(i => !i.purchased).reduce((s, i) => s + (Number(i.price || 0) * (Number(i.quantity) || 1)), 0) ?? 0
 )
 
 const filterOptions = [
@@ -101,86 +114,127 @@ const stats = computed(() => {
     pur:  items.filter(i => i.purchased).length,
   }
 })
+const progressPercent = computed(() => {
+  const total = room.value?.items?.length || 0
+  if (total === 0) return 0
+  return (stats.value.pur / total) * 100
+})
+
 </script>
 
 <style scoped>
 .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-/* Topbar */
-.topbar {
+/* New Room Header */
+.room-header {
   padding: 1.5rem 2rem;
   background: var(--secondary);
   border-bottom: var(--border);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 1rem;
-  flex-shrink: 0;
+  gap: 1.5rem;
 }
-.topbar-info { display: flex; align-items: center; gap: 0.8rem; }
-.room-emoji { font-size: 2rem; }
-.room-title { font-size: 2rem; font-weight: 900; text-transform: uppercase; color: #000; letter-spacing: -0.04em; }
-.topbar-stats { font-weight: 800; font-size: 0.9rem; }
-.highlight { background: #000; color: var(--secondary); padding: 2px 8px; }
-
-/* Filters */
-.filters-container {
+.header-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.title-group {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.8rem 2rem;
-  background: #fff;
-  border-bottom: var(--border-thin);
-  flex-shrink: 0;
 }
-.filters-scroll { display: flex; align-items: center; gap: 0.5rem; overflow-x: auto; flex: 1; padding-bottom: 4px; }
-.filters-scroll::-webkit-scrollbar { height: 4px; }
+.room-emoji { 
+  font-size: 2.2rem; 
+}
+/* Style handled by global .bold-black-icon */
+.title-meta { display: flex; flex-direction: column; }
+.room-title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 0.9; letter-spacing: -0.04em; }
+.room-pending-meta { font-size: 0.75rem; font-weight: 800; opacity: 0.7; margin-top: 0.4rem; }
 
-.filter-chip {
+/* Header Dashboard */
+.header-dashboard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1rem;
+}
+.progress-box {
+  background: var(--surface);
+  color: var(--text);
+  border: var(--border-thin);
+  padding: 0.5rem 0.8rem;
+  width: 180px;
+  box-shadow: 4px 4px 0px var(--shadow-color);
+}
+.progress-label { display: block; font-size: 0.55rem; font-weight: 900; margin-bottom: 0.3rem; opacity: 0.8; }
+.mini-progress-bg { height: 6px; background: var(--bg); border: 1.5px solid var(--border-color); margin-bottom: 0.3rem; position: relative; }
+.mini-progress-bar { height: 100%; background: var(--primary); transition: width 0.3s ease; }
+.progress-text { font-size: 0.6rem; font-weight: 900; text-align: right; }
+
+.header-actions { display: flex; gap: 0.6rem; }
+.header-btn {
   padding: 0.4rem 1rem;
-  background: #fff;
-  border: 2px solid #000;
-  font-weight: 800;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  white-space: nowrap;
-  transition: all var(--t);
-}
-.filter-chip:hover { transform: translate(-1px, -1px); box-shadow: 2px 2px 0px #000; }
-.filter-chip.active { background: #000; color: #fff; }
-.filter-chip.cat { border-style: dashed; }
-
-.v-divider { width: 2px; height: 24px; background: #000; margin: 0 0.5rem; flex-shrink: 0; }
-
-.manage-cat-btn { font-size: 0.7rem; font-weight: 900; border: 2px solid #000; padding: 4px 10px; background: #eee; }
-
-/* Stats Bar */
-.stats-bar {
-  display: flex; gap: 1rem; flex-wrap: wrap;
-  padding: 0.8rem 2rem;
-  background: var(--bg);
-  border-bottom: var(--border-thin);
-  flex-shrink: 0;
-}
-.stat-pill {
-  display: flex; align-items: center; gap: 0.6rem;
-  padding: 0.4rem 0.8rem;
-  border: 2px solid #000;
+  background: var(--text);
+  color: var(--surface);
+  font-weight: 900;
   font-size: 0.7rem;
-  font-weight: 800;
+  border: none;
+  box-shadow: 3px 3px 0px var(--secondary);
 }
-.stat-pill strong { font-size: 0.9rem; }
-.stat-pill.green { background: var(--primary); }
-.stat-pill.yellow { background: var(--secondary); }
-.stat-pill.pink { background: #FFC0CB; }
-.stat-pill.black { background: #000; color: #fff; }
+.header-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0px var(--secondary); }
+
+ .header-stats {
+   display: flex;
+   gap: 0.6rem;
+ }
+ .stat-pill {
+   display: flex;
+   align-items: center;
+   gap: 0.5rem;
+   padding: 0.3rem 0.6rem;
+   border: 1.5px solid var(--border-color);
+   font-size: 0.6rem;
+   font-weight: 800;
+   background: var(--surface);
+   color: var(--text);
+ }
+ .stat-pill strong { font-size: 0.8rem; color: var(--text); }
+ .stat-pill.green { background: var(--primary); }
+ .stat-pill.yellow { background: var(--secondary); }
+ .stat-pill.pink { background: var(--accent); }
+
+/* Action Bar */
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 2rem;
+  background: var(--surface);
+  border-bottom: var(--border-thin);
+}
+.filters-scroll { flex: 1; display: flex; align-items: center; gap: 0.5rem; overflow-x: auto; }
+.filter-chip {
+  padding: 0.3rem 0.8rem;
+  border: 1.5px solid var(--border-color);
+  font-weight: 800;
+  font-size: 0.7rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+.filter-chip.active { background: var(--text); color: var(--surface); }
+.filter-chip.cat { border-style: dashed; opacity: 0.7; }
+
+.v-divider { width: 1.5px; height: 18px; background: var(--text); margin: 0 0.4rem; opacity: 0.2; }
+.manage-cat-btn { font-size: 0.6rem; font-weight: 900; color: var(--text); border: 1.5px solid var(--border-color); padding: 3px 8px; background: var(--bg); }
 
 /* Items */
-.items-area { flex: 1; overflow-y: auto; padding: 2rem; }
-.items-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
+.items-area { flex: 1; overflow-y: auto; padding: 1.5rem 2rem; }
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
 }
 
 .empty-pop {

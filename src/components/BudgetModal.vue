@@ -2,7 +2,7 @@
   <Transition name="modal">
     <div v-if="open" class="modal-overlay" @click.self="$emit('close')">
       <div class="modal">
-        <div class="modal-title">Edit Budget Limit</div>
+        <div class="modal-title">EDIT BUDGET LIMIT</div>
         
         <div class="form-row">
           <label class="form-label">Total Budget Limit ({{ data.currency }})</label>
@@ -57,8 +57,15 @@ async function save() {
     return
   }
   
-  await data.setBudget(val)
-  showToast('Budget limit updated!')
-  emit('close')
+  try {
+    await data.setBudget(val)
+    showToast('Budget limit updated!')
+  } catch (err) {
+    console.warn('Budget sync error:', err)
+    // We already updated local state in the store, so we can still close
+    showToast('Updated locally (cloud sync pending)')
+  } finally {
+    emit('close')
+  }
 }
 </script>

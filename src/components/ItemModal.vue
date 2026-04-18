@@ -2,7 +2,7 @@
   <Transition name="modal">
     <div v-if="open" class="modal-overlay" @click.self="$emit('close')">
       <div class="modal">
-        <div class="modal-title">{{ itemId ? 'Edit Item' : 'Add Item' }}</div>
+        <div class="modal-title">{{ (itemId ? 'Edit Item' : 'Add Item').toUpperCase() }}</div>
         
         <div class="form-row">
           <label class="form-label">Item Name</label>
@@ -16,8 +16,8 @@
           />
         </div>
 
-        <div class="form-row form-2col">
-          <div>
+        <div class="form-row form-3col">
+          <div style="flex: 2">
             <label class="form-label">Price ({{ data.currency }})</label>
             <input
               v-model.number="itemPrice"
@@ -28,7 +28,17 @@
               step="0.01"
             />
           </div>
-          <div>
+          <div style="flex: 1">
+            <label class="form-label">Qty</label>
+            <input
+              v-model.number="itemQuantity"
+              type="number"
+              class="form-input"
+              placeholder="1"
+              min="1"
+            />
+          </div>
+          <div style="flex: 2">
             <label class="form-label">Priority</label>
             <select v-model="itemPriority" class="form-select">
               <option value="necessary">✅ Necessary</option>
@@ -81,6 +91,7 @@ const { showToast } = useToast()
 
 const itemName = ref('')
 const itemPrice = ref(0)
+const itemQuantity = ref(1)
 const itemPriority = ref('necessary')
 const itemCategory = ref('')
 const itemNotes = ref('')
@@ -95,6 +106,7 @@ watch(() => props.open, (isOpen) => {
     
     itemName.value = item ? item.name : ''
     itemPrice.value = item ? item.price : 0
+    itemQuantity.value = item ? (item.quantity || 1) : 1
     itemPriority.value = item ? item.priority : 'necessary'
     itemCategory.value = item ? item.category : (data.categories[0] || '')
     itemNotes.value = item ? (item.notes || '') : ''
@@ -115,18 +127,25 @@ async function save() {
   const itemData = {
     name,
     price: parseFloat(itemPrice.value) || 0,
+    quantity: parseInt(itemQuantity.value) || 1,
     priority: itemPriority.value,
     category: itemCategory.value,
     notes: itemNotes.value.trim()
   }
 
-  if (props.itemId) {
-    await data.updateItem(data.activeRoom, props.itemId, itemData)
-    showToast('Item updated!')
-  } else {
-    await data.addItem(data.activeRoom, itemData)
-    showToast('Item added!')
+  try {
+    if (props.itemId) {
+      await data.updateItem(data.activeRoom, props.itemId, itemData)
+      showToast('Item updated!')
+    } else {
+      await data.addItem(data.activeRoom, itemData)
+      showToast('Item added!')
+    }
+  } catch (err) {
+    console.warn('Item sync error:', err)
+    showToast('Saved locally (sync pending)')
+  } finally {
+    emit('close')
   }
-  emit('close')
 }
 </script>

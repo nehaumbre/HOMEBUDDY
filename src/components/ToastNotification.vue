@@ -17,14 +17,14 @@ const { toastMessage, isVisible } = useToast()
   bottom: 6rem;
   right: 2rem;
   z-index: 1200;
-  background: #000;
-  color: #fff;
-  border: 2px solid #fff;
+  background: var(--text);
+  color: var(--surface);
+  border: 2px solid var(--border-color);
   padding: 0.8rem 1.5rem;
   font-size: 0.85rem;
   font-weight: 800;
   text-transform: uppercase;
-  box-shadow: 6px 6px 0px rgba(0,0,0,0.5);
+  box-shadow: 6px 6px 0px var(--shadow-color);
   letter-spacing: 0.05em;
 }
 

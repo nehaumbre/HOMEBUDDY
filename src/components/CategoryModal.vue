@@ -66,16 +66,16 @@ async function add() {
   padding: 0.8rem 1.2rem;
   background: var(--primary);
   border: var(--border-thin);
-  color: #000;
+  color: var(--white);
   font-weight: 800;
   font-size: 0.85rem;
   transition: all var(--t);
   cursor: pointer;
-  box-shadow: 3px 3px 0px #000;
+  box-shadow: 3px 3px 0px var(--shadow-color);
 }
 .cat-add-btn:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0px #000;
+  box-shadow: 4px 4px 0px var(--shadow-color);
 }
 
 .cat-tags {
@@ -89,16 +89,17 @@ async function add() {
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.8rem;
-  background: #fff;
+  background: var(--surface);
+  color: var(--text);
   border: var(--border-thin);
   font-size: 0.8rem;
   font-weight: 800;
-  box-shadow: 2px 2px 0px #000;
+  box-shadow: 2px 2px 0px var(--shadow-color);
 }
 .cat-tag-del {
   background: none;
   border: none;
-  color: #000;
+  color: var(--text);
   font-size: 0.9rem;
   font-weight: 900;
   padding: 0;
