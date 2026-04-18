@@ -1,0 +1,22 @@
+{
+  "name": "homebuddy",
+  "version": "2.0.0",
+  "description": "HomeBuddy — Organize your first home with Google login and cloud sync",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js"
+  },
+  "dependencies": {
+    "firebase": "^10.12.0",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.2.0"
+  }
+}
